@@ -43,9 +43,23 @@ export class PrinterService {
     console.log("🖨️ PrinterService initialized");
   }
 
+  private resetDeviceState(): void {
+    console.log("🖨️ Resetting device state...");
+    this.device = null;
+    this.isInitialized = false;
+  }
+
   private async initializeDevice(): Promise<USB> {
+    // Always check if the current device is still valid
     if (this.device && this.isInitialized) {
-      return this.device;
+      try {
+        // Test if the current device is still accessible
+        await this.testDeviceConnection(this.device);
+        return this.device;
+      } catch (error) {
+        console.log("🖨️ Current device is no longer valid, resetting...");
+        this.resetDeviceState();
+      }
     }
 
     try {
@@ -55,13 +69,41 @@ export class PrinterService {
       // Set max listeners to prevent warnings
       (this.device as any).setMaxListeners?.(20);
 
+      // Test the new device connection
+      await this.testDeviceConnection(this.device);
+
       this.isInitialized = true;
       console.log("🖨️ USB printer device initialized successfully");
       return this.device;
     } catch (error) {
       console.error("🖨️ Failed to initialize USB printer device:", error);
+      this.resetDeviceState();
       throw new Error(`Failed to initialize USB printer device: ${error}`);
     }
+  }
+
+  private async testDeviceConnection(device: USB): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(new Error("Device connection test timeout"));
+      }, 3000); // 3 second timeout
+
+      device.open((err: Error | null) => {
+        clearTimeout(timeout);
+        if (err) {
+          reject(new Error(`Device connection test failed: ${err.message}`));
+        } else {
+          // Close the test connection immediately
+          try {
+            device.close();
+            resolve();
+          } catch (closeError) {
+            console.log("🖨️ Error closing test device:", closeError);
+            resolve(); // Still resolve as the device is accessible
+          }
+        }
+      });
+    });
   }
 
   async isPrinterAvailable(): Promise<boolean> {
@@ -98,6 +140,12 @@ export class PrinterService {
     }
   }
 
+  // Public method to manually reset device state (useful for reconnection)
+  public resetDevice(): void {
+    console.log("🖨️ Manual device reset requested");
+    this.resetDeviceState();
+  }
+
   async printOrder(
     order: OrderWithRelations,
     restaurant: RestaurantAttributes
@@ -117,6 +165,8 @@ export class PrinterService {
         device.open(async (err: Error | null) => {
           if (err) {
             console.error("🖨️ Error opening printer:", err);
+            // Reset device state on connection error
+            this.resetDeviceState();
             clearTimeout(timeout);
             reject(err);
             return;
@@ -179,6 +229,8 @@ export class PrinterService {
         device.open(async (err: Error | null) => {
           if (err) {
             console.error("🖨️ Error opening printer:", err);
+            // Reset device state on connection error
+            this.resetDeviceState();
             clearTimeout(timeout);
             reject(err);
             return;

@@ -18,6 +18,34 @@ class PrinterSocketClient {
     this.printerService = new PrinterService();
   }
 
+  private async retryPrintOperation<T>(
+    operation: () => Promise<T>,
+    maxRetries: number = 3,
+    baseDelay: number = 1000
+  ): Promise<T> {
+    let lastError: Error;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        return await operation();
+      } catch (error) {
+        lastError = error as Error;
+        console.log(`🖨️ Print attempt ${attempt} failed:`, error);
+
+        if (attempt < maxRetries) {
+          const delay = baseDelay * Math.pow(2, attempt - 1); // Exponential backoff
+          console.log(`🖨️ Retrying in ${delay}ms...`);
+          await new Promise((resolve) => setTimeout(resolve, delay));
+
+          // Reset device state before retry
+          this.printerService.resetDevice();
+        }
+      }
+    }
+
+    throw lastError!;
+  }
+
   connect() {
     console.log("🖨️ Connecting to backend at:", this.backendUrl);
 
@@ -66,10 +94,12 @@ class PrinterSocketClient {
         });
 
         try {
-          await this.printerService.printOrder(order, restaurant);
+          await this.retryPrintOperation(() =>
+            this.printerService.printOrder(order, restaurant)
+          );
           console.log("🖨️ Order printed successfully:", order.id);
         } catch (error) {
-          console.error("🖨️ Error printing order:", error);
+          console.error("🖨️ Error printing order after retries:", error);
         }
       }
     );
@@ -85,10 +115,12 @@ class PrinterSocketClient {
       });
 
       try {
-        await this.printerService.printQRCode(data);
+        await this.retryPrintOperation(() =>
+          this.printerService.printQRCode(data)
+        );
         console.log("🖨️ QR code printed successfully");
       } catch (error) {
-        console.error("🖨️ Error printing QR code:", error);
+        console.error("🖨️ Error printing QR code after retries:", error);
       }
     });
   }
@@ -111,6 +143,15 @@ class PrinterSocketClient {
         try {
           const available = await this.printerService.isPrinterAvailable();
           console.log("🖨️ Printer status:", available);
+
+          // If printer becomes available after being unavailable, reset device state
+          if (available) {
+            console.log(
+              "🖨️ Printer is available, ensuring device state is reset"
+            );
+            this.printerService.resetDevice();
+          }
+
           this.socket.emit("printerStatus", {
             restaurantId: this.restaurantId,
             available,

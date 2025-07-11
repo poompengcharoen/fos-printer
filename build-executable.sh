@@ -42,7 +42,17 @@ echo "🖨️ Installing FOS Printer..."
 
 # Install dependencies
 echo "📦 Installing dependencies..."
-yarn install --production
+if command -v yarn &> /dev/null; then
+    yarn install --production
+elif command -v npm &> /dev/null; then
+    echo "⚠️  Yarn not found, using npm instead"
+    npm install --production
+else
+    echo "❌ Neither yarn nor npm found!"
+    echo "Please install Node.js and npm first:"
+    echo "  https://nodejs.org/"
+    exit 1
+fi
 
 # Copy to /usr/local/bin (or ~/.local/bin if no write access)
 INSTALL_DIR="/usr/local/bin"
@@ -55,16 +65,30 @@ fi
 cp fos-printer "$INSTALL_DIR/"
 echo "✅ FOS Printer installed to $INSTALL_DIR/fos-printer"
 
-# Create desktop shortcut (macOS)
-if [[ "$OSTYPE" == "darwin"* ]]; then
-    echo "📱 Creating desktop shortcut..."
-    cat > ~/Desktop/FOS\ Printer.command << 'DESKTOP_EOF'
-#!/bin/bash
-cd "$(dirname "$0")"
-/usr/local/bin/fos-printer
-DESKTOP_EOF
-    chmod +x ~/Desktop/FOS\ Printer.command
-    echo "✅ Desktop shortcut created"
+# Create template .env file if it doesn't exist
+if [ ! -f .env ]; then
+    echo "📝 Creating template .env file..."
+    cat > .env << 'ENV_EOF'
+# FOS Printer Configuration
+# Update these values with your actual settings
+
+# Backend API URL
+BACKEND_URL=http://localhost:3000
+
+# Restaurant ID
+RESTAURANT_ID=your-restaurant-id
+
+# Printer settings (optional)
+# PRINTER_NAME=your-printer-name
+# PRINTER_PORT=your-printer-port
+
+# Logging level (debug, info, warn, error)
+LOG_LEVEL=info
+ENV_EOF
+    echo "✅ Template .env file created"
+    echo "⚠️  Please update the .env file with your actual settings"
+else
+    echo "ℹ️  .env file already exists, skipping template creation"
 fi
 
 echo "🎉 Installation complete!"
@@ -86,7 +110,7 @@ A standalone executable for the Food Order System printer service.
    ./install.sh
    ```
 
-2. Configure the application by creating a `.env` file:
+2. Configure the application by updating the `.env` file (created automatically):
    ```bash
    BACKEND_URL=http://your-backend-url.com
    RESTAURANT_ID=your-restaurant-id
@@ -101,10 +125,15 @@ A standalone executable for the Food Order System printer service.
 
 If you prefer to install manually:
 
-1. Install dependencies: `yarn install --production`
+1. Install dependencies: `yarn install --production` (or `npm install --production` if yarn is not available)
 2. Copy `fos-printer` to a directory in your PATH (e.g., `/usr/local/bin/`)
 3. Create a `.env` file with your configuration
 4. Run `fos-printer`
+
+## Prerequisites
+
+- Node.js and npm (or yarn) must be installed
+- Download from: https://nodejs.org/
 
 ## Troubleshooting
 

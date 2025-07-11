@@ -144,14 +144,6 @@ class PrinterSocketClient {
           const available = await this.printerService.isPrinterAvailable();
           console.log("🖨️ Printer status:", available);
 
-          // If printer becomes available after being unavailable, reset device state
-          if (available) {
-            console.log(
-              "🖨️ Printer is available, ensuring device state is reset"
-            );
-            this.printerService.resetDevice();
-          }
-
           this.socket.emit("printerStatus", {
             restaurantId: this.restaurantId,
             available,

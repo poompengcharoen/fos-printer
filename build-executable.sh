@@ -15,7 +15,6 @@ mkdir -p fos-printer-app
 
 # Copy the built files
 cp -r dist fos-printer-app/
-cp -r node_modules fos-printer-app/
 cp package.json fos-printer-app/
 
 # Create the main executable script
@@ -24,10 +23,6 @@ cat > fos-printer-app/fos-printer << 'EOF'
 
 // FOS Printer Executable
 const path = require("path");
-const { createRequire } = require("module");
-
-// Set up the require function to load from our node_modules
-const require = createRequire(path.join(__dirname, "node_modules"));
 
 // Load environment variables
 require("dotenv").config({ path: path.join(__dirname, ".env") });
@@ -44,6 +39,10 @@ cat > fos-printer-app/install.sh << 'EOF'
 #!/bin/bash
 
 echo "🖨️ Installing FOS Printer..."
+
+# Install dependencies
+echo "📦 Installing dependencies..."
+npm install --production
 
 # Copy to /usr/local/bin (or ~/.local/bin if no write access)
 INSTALL_DIR="/usr/local/bin"
@@ -102,8 +101,8 @@ A standalone executable for the Food Order System printer service.
 
 If you prefer to install manually:
 
-1. Copy `fos-printer` to a directory in your PATH (e.g., `/usr/local/bin/`)
-2. Copy the `node_modules` and `dist` directories to the same location
+1. Install dependencies: `npm install --production`
+2. Copy `fos-printer` to a directory in your PATH (e.g., `/usr/local/bin/`)
 3. Create a `.env` file with your configuration
 4. Run `fos-printer`
 
@@ -114,10 +113,15 @@ If you prefer to install manually:
 - Verify your restaurant ID is set correctly
 EOF
 
+# Create zip file for easy distribution
+echo "📦 Creating zip package..."
+zip -r fos-printer-app.zip fos-printer-app/
+
 echo "✅ Executable package created in fos-printer-app/"
+echo "✅ Zip package created: fos-printer-app.zip"
 echo ""
 echo "📋 Next steps:"
-echo "1. Copy fos-printer-app/ to your target machine"
-echo "2. Run ./install.sh on the target machine"
+echo "1. Download fos-printer-app.zip"
+echo "2. Extract and run ./install.sh on the target machine"
 echo "3. Configure .env file with your settings"
 echo "4. Run fos-printer to start" 

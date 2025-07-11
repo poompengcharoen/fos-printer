@@ -35,12 +35,19 @@ jobs:
         run: yarn build
 
       - name: Create executable package
-        run: chmod +x build-executable.sh && ./build-executable.sh
+        run: |
+          chmod +x build-executable.sh
+          ./build-executable.sh
+          ls -la
+          ls -la fos-printer-app/ || echo "fos-printer-app directory not found"
 
       - name: Prepare files for deployment
         run: |
           mkdir -p public
-          cp -r fos-printer-app public/
+          ls -la
+          cp -r fos-printer-app public/ || echo "Failed to copy fos-printer-app"
+          cp fos-printer-app.zip public/ || echo "Failed to copy zip file"
+          ls -la public/
           # The index.html is already in the public directory from the repository
 
       - name: Setup Pages

@@ -27,6 +27,13 @@ class PrinterSocketClient {
 
     // Initial availability check
     this.checkPrinterAvailability();
+
+    // Periodic status check every 5 seconds to ensure consistency
+    setInterval(() => {
+      if (this.restaurantId && this.socket?.connected) {
+        this.checkPrinterStatus();
+      }
+    }, 5000);
   }
 
   private setupPrinterMonitoring(): void {
@@ -42,6 +49,25 @@ class PrinterSocketClient {
       // Automatically emit status to backend when it changes
       if (this.restaurantId && this.socket) {
         this.emitPrinterStatus();
+      }
+
+      // If printer becomes available and we don't have a socket connection, try to reconnect
+      if (available && (!this.socket || !this.socket.connected)) {
+        console.log(
+          "🖨️ Printer available but socket disconnected, attempting to reconnect..."
+        );
+        this.connect();
+        // Note: joinPrinter will be called automatically in the connect() method
+        // when the socket connects, so we don't need to call it here
+      }
+
+      // If printer becomes unavailable, emit error status to ensure backend knows
+      if (!available && this.restaurantId && this.socket) {
+        console.log("🖨️ Emitting printer error status due to unavailability");
+        this.socket.emit("printerError", {
+          restaurantId: this.restaurantId,
+          error: "Printer disconnected",
+        });
       }
     });
   }
@@ -102,8 +128,11 @@ class PrinterSocketClient {
       // Join printer room for the restaurant if restaurantId is set
       if (this.restaurantId) {
         this.joinPrinter(this.restaurantId);
-        // Emit printer status after joining
-        setTimeout(() => this.emitPrinterStatus(), 1000);
+        // Emit printer status after joining with a delay to ensure room is joined
+        setTimeout(() => {
+          // Force a status check to ensure we have the latest status
+          this.checkPrinterStatus();
+        }, 1000);
       }
     });
 
@@ -218,6 +247,20 @@ class PrinterSocketClient {
     this.socket.on("checkPrinterStatus", async () => {
       console.log("🖨️ Printer status check requested");
       await this.checkPrinterStatus();
+    });
+
+    // Listen for forced status check requests
+    this.socket.on("forcePrinterStatusCheck", async () => {
+      console.log("🖨️ Forced printer status check requested");
+      try {
+        const available = await this.printerService.forceStatusCheck();
+        this.printerAvailable = available;
+        this.emitPrinterStatus();
+      } catch (error) {
+        console.error("🖨️ Error during forced status check:", error);
+        this.printerAvailable = false;
+        this.emitPrinterStatus();
+      }
     });
 
     return this.socket;

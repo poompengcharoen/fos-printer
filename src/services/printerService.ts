@@ -44,6 +44,7 @@ export class PrinterService {
   private statusCallbacks: PrinterStatusCallback[] = [];
   private monitoringInterval: NodeJS.Timeout | null = null;
   private lastKnownStatus: boolean = false;
+  private testDevice: USB | null = null;
 
   constructor() {
     // Don't initialize USB device immediately - do it lazily when needed
@@ -69,7 +70,12 @@ export class PrinterService {
   }
 
   private startDeviceMonitoring(): void {
-    // Check for device changes every 2 seconds
+    // Prevent multiple monitoring intervals
+    if (this.monitoringInterval) {
+      clearInterval(this.monitoringInterval);
+    }
+
+    // Check for device changes every 1 second for faster response
     this.monitoringInterval = setInterval(async () => {
       try {
         const currentStatus = await this.checkDeviceAvailability();
@@ -97,18 +103,73 @@ export class PrinterService {
         }
       } catch (error) {
         console.error("🖨️ Error during device monitoring:", error);
+        // If there's an error, assume device is not available
+        if (this.lastKnownStatus !== false) {
+          this.lastKnownStatus = false;
+          this.isInitialized = false;
+          this.device = null;
+
+          // Notify all callbacks
+          this.statusCallbacks.forEach((callback) => {
+            try {
+              callback(false);
+            } catch (callbackError) {
+              console.error("🖨️ Error in status callback:", callbackError);
+            }
+          });
+        }
       }
-    }, 2000);
+    }, 1000);
 
     console.log("🖨️ USB device monitoring started");
   }
 
   private async checkDeviceAvailability(): Promise<boolean> {
     try {
+      // Clean up previous test device if it exists
+      if (this.testDevice) {
+        try {
+          // Remove all listeners to prevent memory leaks
+          this.testDevice.removeAllListeners();
+          // Close the device connection
+          this.testDevice.close();
+        } catch (error) {
+          console.log("🖨️ Error cleaning up test device:", error);
+        }
+        this.testDevice = null;
+      }
+
       // Try to create a new USB instance to check if device is available
-      const testDevice = new USB();
-      return true;
+      this.testDevice = new USB();
+
+      // Set max listeners to prevent warnings
+      (this.testDevice as any).setMaxListeners?.(20);
+
+      // Test if we can actually open the device with a timeout
+      return new Promise((resolve) => {
+        const timeout = setTimeout(() => {
+          console.log("🖨️ USB device check timeout");
+          resolve(false);
+        }, 3000); // 3 second timeout
+
+        this.testDevice!.open((err: Error | null) => {
+          clearTimeout(timeout);
+          if (err) {
+            console.log("🖨️ USB device not available:", err.message);
+            resolve(false);
+          } else {
+            // Close the test connection immediately
+            try {
+              this.testDevice!.close();
+            } catch (closeError) {
+              console.log("🖨️ Error closing test device:", closeError);
+            }
+            resolve(true);
+          }
+        });
+      });
     } catch (error) {
+      console.log("🖨️ Error checking device availability:", error);
       return false;
     }
   }
@@ -121,6 +182,10 @@ export class PrinterService {
     try {
       console.log("🖨️ Initializing USB printer device...");
       this.device = new USB();
+
+      // Set max listeners to prevent warnings
+      (this.device as any).setMaxListeners?.(20);
+
       this.isInitialized = true;
       console.log("🖨️ USB printer device initialized successfully");
       return this.device;
@@ -138,6 +203,46 @@ export class PrinterService {
       return true;
     } catch (error) {
       console.log("🖨️ Printer not available:", error);
+      // If initialization fails, ensure we update the last known status
+      if (this.lastKnownStatus !== false) {
+        this.lastKnownStatus = false;
+        this.isInitialized = false;
+        this.device = null;
+      }
+      return false;
+    }
+  }
+
+  // Force a status check and notify callbacks
+  async forceStatusCheck(): Promise<boolean> {
+    try {
+      const currentStatus = await this.checkDeviceAvailability();
+
+      // Always notify callbacks on forced check
+      if (currentStatus !== this.lastKnownStatus) {
+        console.log(
+          `🖨️ Forced status check: ${
+            this.lastKnownStatus ? "Available" : "Not available"
+          } → ${currentStatus ? "Available" : "Not available"}`
+        );
+
+        this.lastKnownStatus = currentStatus;
+        this.isInitialized = false;
+        this.device = null;
+
+        // Notify all callbacks
+        this.statusCallbacks.forEach((callback) => {
+          try {
+            callback(currentStatus);
+          } catch (error) {
+            console.error("🖨️ Error in status callback:", error);
+          }
+        });
+      }
+
+      return currentStatus;
+    } catch (error) {
+      console.error("🖨️ Error during forced status check:", error);
       return false;
     }
   }
@@ -152,6 +257,17 @@ export class PrinterService {
 
     // Clear callbacks
     this.statusCallbacks = [];
+
+    // Clean up test device
+    if (this.testDevice) {
+      try {
+        this.testDevice.removeAllListeners();
+        this.testDevice.close();
+      } catch (error) {
+        console.log("🖨️ Error cleaning up test device in destroy:", error);
+      }
+      this.testDevice = null;
+    }
 
     // Reset device
     this.device = null;

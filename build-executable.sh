@@ -42,7 +42,7 @@ echo "🖨️ Installing FOS Printer..."
 
 # Install dependencies
 echo "📦 Installing dependencies..."
-npm install --production
+yarn install --production
 
 # Copy to /usr/local/bin (or ~/.local/bin if no write access)
 INSTALL_DIR="/usr/local/bin"
@@ -101,7 +101,7 @@ A standalone executable for the Food Order System printer service.
 
 If you prefer to install manually:
 
-1. Install dependencies: `npm install --production`
+1. Install dependencies: `yarn install --production`
 2. Copy `fos-printer` to a directory in your PATH (e.g., `/usr/local/bin/`)
 3. Create a `.env` file with your configuration
 4. Run `fos-printer`

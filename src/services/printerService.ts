@@ -45,6 +45,7 @@ export class PrinterService {
   private monitoringInterval: NodeJS.Timeout | null = null;
   private lastKnownStatus: boolean = false;
   private testDevice: USB | null = null;
+  private isPrinting = false; // Flag to prevent monitoring during printing
 
   constructor() {
     // Don't initialize USB device immediately - do it lazily when needed
@@ -75,8 +76,13 @@ export class PrinterService {
       clearInterval(this.monitoringInterval);
     }
 
-    // Check for device changes every 1 second for faster response
+    // Check for device changes every 2 seconds to reduce interference
     this.monitoringInterval = setInterval(async () => {
+      // Skip monitoring if currently printing
+      if (this.isPrinting) {
+        return;
+      }
+
       try {
         const currentStatus = await this.checkDeviceAvailability();
 
@@ -119,7 +125,7 @@ export class PrinterService {
           });
         }
       }
-    }, 1000);
+    }, 2000); // Increased to 2 seconds
 
     console.log("🖨️ USB device monitoring started");
   }
@@ -150,7 +156,7 @@ export class PrinterService {
         const timeout = setTimeout(() => {
           console.log("🖨️ USB device check timeout");
           resolve(false);
-        }, 3000); // 3 second timeout
+        }, 2000); // Reduced timeout to 2 seconds
 
         this.testDevice!.open((err: Error | null) => {
           clearTimeout(timeout);
@@ -278,6 +284,7 @@ export class PrinterService {
     order: OrderWithRelations,
     restaurant: RestaurantAttributes
   ): Promise<void> {
+    this.isPrinting = true;
     try {
       console.log("🖨️ Printing order:", order);
       console.log("🖨️ Restaurant data:", restaurant);
@@ -285,9 +292,17 @@ export class PrinterService {
       const device = await this.initializeDevice();
 
       return new Promise((resolve, reject) => {
+        // Add timeout to prevent hanging
+        const timeout = setTimeout(() => {
+          this.isPrinting = false;
+          reject(new Error("Printing operation timed out"));
+        }, 30000); // 30 second timeout
+
         device.open(async (err: Error | null) => {
           if (err) {
             console.error("🖨️ Error opening printer:", err);
+            clearTimeout(timeout);
+            this.isPrinting = false;
             reject(err);
             return;
           }
@@ -319,29 +334,43 @@ export class PrinterService {
             this.printFooter(printer);
 
             printer.cut().close();
+            clearTimeout(timeout);
+            this.isPrinting = false;
             resolve();
           } catch (error) {
             console.error("🖨️ Error during printing:", error);
+            clearTimeout(timeout);
+            this.isPrinting = false;
             reject(error);
           }
         });
       });
     } catch (error) {
       console.error("🖨️ Error initializing printer:", error);
+      this.isPrinting = false;
       throw error;
     }
   }
 
   async printQRCode(data: QRCodePrintData): Promise<void> {
+    this.isPrinting = true;
     try {
       console.log("🖨️ Printing QR code for URL:", data.url);
 
       const device = await this.initializeDevice();
 
       return new Promise((resolve, reject) => {
+        // Add timeout to prevent hanging
+        const timeout = setTimeout(() => {
+          this.isPrinting = false;
+          reject(new Error("QR code printing operation timed out"));
+        }, 30000); // 30 second timeout
+
         device.open(async (err: Error | null) => {
           if (err) {
             console.error("🖨️ Error opening printer:", err);
+            clearTimeout(timeout);
+            this.isPrinting = false;
             reject(err);
             return;
           }
@@ -369,15 +398,20 @@ export class PrinterService {
             this.printQRFooter(printer, data);
 
             printer.cut().close();
+            clearTimeout(timeout);
+            this.isPrinting = false;
             resolve();
           } catch (error) {
             console.error("🖨️ Error during QR code printing:", error);
+            clearTimeout(timeout);
+            this.isPrinting = false;
             reject(error);
           }
         });
       });
     } catch (error) {
       console.error("🖨️ Error initializing QR code printer:", error);
+      this.isPrinting = false;
       throw error;
     }
   }
@@ -390,7 +424,9 @@ export class PrinterService {
       try {
         const image = await Image.load(restaurant.logoUrl);
         console.log("🖨️ Logo loaded successfully from:", restaurant.logoUrl);
+        printer.align("ct");
         await printer.image(image, "d24");
+        printer.align("lt");
         printer.text(""); // Add space after logo
       } catch (imageError) {
         console.log(
@@ -617,47 +653,73 @@ export class PrinterService {
     order: OrderWithRelations,
     restaurant: RestaurantAttributes
   ): Promise<void> {
-    // Barcode and QR code section
-    printer.align("ct").drawLine(".").text("");
+    try {
+      // Barcode and QR code section
+      printer.align("ct").drawLine(".").text("");
 
-    // Add barcode for order ID
-    printer.barcode(order.id.toString(), "CODE128", {
-      width: 50,
-      height: 50,
-    });
-
-    let qrImage;
-    if (
-      restaurant.qrCodeImageUrl &&
-      !restaurant.qrCodeImageUrl.toLowerCase().endsWith(".svg")
-    ) {
+      // Add barcode for order ID
       try {
-        qrImage = await Image.load(restaurant.qrCodeImageUrl);
+        printer.barcode(order.id.toString(), "CODE128", {
+          width: 50,
+          height: 50,
+        });
+      } catch (barcodeError) {
         console.log(
-          "🖨️ Payment QR code loaded successfully from:",
-          restaurant.qrCodeImageUrl
+          "🖨️ Could not print barcode, continuing without it:",
+          barcodeError
         );
-      } catch (qrError) {
-        console.log(
-          "🖨️ Could not load payment QR code, continuing without it:",
-          qrError
-        );
-        qrImage = undefined;
       }
-    }
 
-    if (qrImage) {
-      await printer.image(qrImage, "d24");
-      printer.text("");
-    } else if (restaurant.promptPay) {
-      const payload = generatePayload(restaurant.promptPay, {
-        amount:
-          order.orderItems?.reduce((sum, item) => {
-            const price = item.food?.price || 0;
-            return sum + price * item.quantity;
-          }, 0) || 0,
-      });
-      await printer.qrimage(payload);
+      let qrImage;
+      if (
+        restaurant.qrCodeImageUrl &&
+        !restaurant.qrCodeImageUrl.toLowerCase().endsWith(".svg")
+      ) {
+        try {
+          qrImage = await Image.load(restaurant.qrCodeImageUrl);
+          console.log(
+            "🖨️ Payment QR code loaded successfully from:",
+            restaurant.qrCodeImageUrl
+          );
+        } catch (qrError) {
+          console.log(
+            "🖨️ Could not load payment QR code, continuing without it:",
+            qrError
+          );
+          qrImage = undefined;
+        }
+      }
+
+      if (qrImage) {
+        try {
+          await printer.image(qrImage, "d24");
+          printer.text("");
+        } catch (imageError) {
+          console.log(
+            "🖨️ Could not print QR image, continuing without it:",
+            imageError
+          );
+        }
+      } else if (restaurant.promptPay) {
+        try {
+          const payload = generatePayload(restaurant.promptPay, {
+            amount:
+              order.orderItems?.reduce((sum, item) => {
+                const price = item.food?.price || 0;
+                return sum + price * item.quantity;
+              }, 0) || 0,
+          });
+          await printer.qrimage(payload);
+        } catch (promptPayError) {
+          console.log(
+            "🖨️ Could not generate PromptPay QR, continuing without it:",
+            promptPayError
+          );
+        }
+      }
+    } catch (error) {
+      console.error("🖨️ Error in printBarcodeAndQR:", error);
+      // Continue with printing even if barcode/QR fails
     }
   }
 

@@ -73,17 +73,14 @@ if [ ! -f .env ]; then
 # Update these values with your actual settings
 
 # Backend API URL
-BACKEND_URL=http://localhost:3000
+BACKEND_URL=https://fos-backend.demos.poompengcharoen.dev
 
 # Restaurant ID
 RESTAURANT_ID=your-restaurant-id
 
 # Printer settings (optional)
-# PRINTER_NAME=your-printer-name
-# PRINTER_PORT=your-printer-port
-
-# Logging level (debug, info, warn, error)
-LOG_LEVEL=info
+LOCALE=en
+CURRENCY=THB
 ENV_EOF
     echo "✅ Template .env file created"
     echo "⚠️  Please update the .env file with your actual settings"

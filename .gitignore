@@ -10,6 +10,13 @@
 /build
 /dist
 
+# Executable builds and packages
+/fos-printer-app
+/fos-printer
+/fos-printer-new
+/sea-prep.blob
+/dist-electron
+
 # environment variables
 .env
 .env.local
@@ -38,3 +45,7 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.temp
+
+# Build scripts and configs
+bundle.js
+env.example

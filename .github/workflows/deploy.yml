@@ -1,0 +1,82 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+        cache: 'yarn'
+
+    - name: Install dependencies
+      run: yarn install --frozen-lockfile
+
+    - name: Build TypeScript
+      run: yarn build
+
+    - name: Create executable package
+      run: chmod +x build-executable.sh && ./build-executable.sh
+
+    - name: Create download page
+      run: |
+        mkdir -p public
+        cp -r fos-printer-app public/
+        cat > public/index.html << 'EOF'
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>FOS Printer - Download</title>
+          <style>
+            body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+            .download { background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0; }
+            .btn { background: #007cba; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; display: inline-block; }
+            .version { color: #666; font-size: 0.9em; }
+          </style>
+        </head>
+        <body>
+          <h1>🖨️ FOS Printer</h1>
+          <p>Download the latest version of the Food Order System Printer for your platform:</p>
+          
+          <div class="download">
+            <h3>📦 Complete Package</h3>
+            <p>Includes all dependencies and installation scripts.</p>
+            <a href="fos-printer-app/" class="btn">Download Package</a>
+            <p class="version">Version: $(git describe --tags --always)</p>
+          </div>
+          
+          <div class="download">
+            <h3>📋 Installation Instructions</h3>
+            <ol>
+              <li>Download and extract the package</li>
+              <li>Run <code>./install.sh</code> to install</li>
+              <li>Create a <code>.env</code> file with your configuration</li>
+              <li>Run <code>fos-printer</code> to start</li>
+            </ol>
+          </div>
+          
+          <div class="download">
+            <h3>⚙️ Configuration</h3>
+            <p>Create a <code>.env</code> file with:</p>
+            <pre>BACKEND_URL=http://your-backend-url.com
+RESTAURANT_ID=your-restaurant-id</pre>
+          </div>
+        </body>
+        </html>
+        EOF
+
+    - name: Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./public 

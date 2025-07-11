@@ -35,11 +35,127 @@ export interface QRCodePrintData {
   sessionId?: string;
 }
 
+// Callback type for printer status changes
+export type PrinterStatusCallback = (available: boolean) => void;
+
 export class PrinterService {
-  private device: USB;
+  private device: USB | null = null;
+  private isInitialized = false;
+  private statusCallbacks: PrinterStatusCallback[] = [];
+  private monitoringInterval: NodeJS.Timeout | null = null;
+  private lastKnownStatus: boolean = false;
 
   constructor() {
-    this.device = new USB();
+    // Don't initialize USB device immediately - do it lazily when needed
+    console.log(
+      "🖨️ PrinterService initialized (USB device will be initialized when needed)"
+    );
+
+    // Start monitoring for USB device changes
+    this.startDeviceMonitoring();
+  }
+
+  // Add callback for printer status changes
+  onStatusChange(callback: PrinterStatusCallback): void {
+    this.statusCallbacks.push(callback);
+  }
+
+  // Remove callback for printer status changes
+  removeStatusCallback(callback: PrinterStatusCallback): void {
+    const index = this.statusCallbacks.indexOf(callback);
+    if (index > -1) {
+      this.statusCallbacks.splice(index, 1);
+    }
+  }
+
+  private startDeviceMonitoring(): void {
+    // Check for device changes every 2 seconds
+    this.monitoringInterval = setInterval(async () => {
+      try {
+        const currentStatus = await this.checkDeviceAvailability();
+
+        // Only notify if status has changed
+        if (currentStatus !== this.lastKnownStatus) {
+          console.log(
+            `🖨️ Printer status changed: ${
+              this.lastKnownStatus ? "Available" : "Not available"
+            } → ${currentStatus ? "Available" : "Not available"}`
+          );
+
+          this.lastKnownStatus = currentStatus;
+          this.isInitialized = false; // Reset initialization flag
+          this.device = null; // Reset device reference
+
+          // Notify all callbacks
+          this.statusCallbacks.forEach((callback) => {
+            try {
+              callback(currentStatus);
+            } catch (error) {
+              console.error("🖨️ Error in status callback:", error);
+            }
+          });
+        }
+      } catch (error) {
+        console.error("🖨️ Error during device monitoring:", error);
+      }
+    }, 2000);
+
+    console.log("🖨️ USB device monitoring started");
+  }
+
+  private async checkDeviceAvailability(): Promise<boolean> {
+    try {
+      // Try to create a new USB instance to check if device is available
+      const testDevice = new USB();
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  private async initializeDevice(): Promise<USB> {
+    if (this.device && this.isInitialized) {
+      return this.device;
+    }
+
+    try {
+      console.log("🖨️ Initializing USB printer device...");
+      this.device = new USB();
+      this.isInitialized = true;
+      console.log("🖨️ USB printer device initialized successfully");
+      return this.device;
+    } catch (error) {
+      console.error("🖨️ Failed to initialize USB printer device:", error);
+      throw new Error(
+        "No USB printer found. Please connect a printer and try again."
+      );
+    }
+  }
+
+  async isPrinterAvailable(): Promise<boolean> {
+    try {
+      await this.initializeDevice();
+      return true;
+    } catch (error) {
+      console.log("🖨️ Printer not available:", error);
+      return false;
+    }
+  }
+
+  // Cleanup method to stop monitoring
+  destroy(): void {
+    if (this.monitoringInterval) {
+      clearInterval(this.monitoringInterval);
+      this.monitoringInterval = null;
+      console.log("🖨️ USB device monitoring stopped");
+    }
+
+    // Clear callbacks
+    this.statusCallbacks = [];
+
+    // Reset device
+    this.device = null;
+    this.isInitialized = false;
   }
 
   async printOrder(
@@ -50,8 +166,10 @@ export class PrinterService {
       console.log("🖨️ Printing order:", order);
       console.log("🖨️ Restaurant data:", restaurant);
 
+      const device = await this.initializeDevice();
+
       return new Promise((resolve, reject) => {
-        this.device.open(async (err: Error | null) => {
+        device.open(async (err: Error | null) => {
           if (err) {
             console.error("🖨️ Error opening printer:", err);
             reject(err);
@@ -61,7 +179,7 @@ export class PrinterService {
           try {
             const encoding = "CP874";
             const options = { encoding };
-            let printer = new Printer(this.device, options);
+            let printer = new Printer(device, options);
 
             // Load and print logo
             await this.printLogo(printer, restaurant);
@@ -102,8 +220,10 @@ export class PrinterService {
     try {
       console.log("🖨️ Printing QR code for URL:", data.url);
 
+      const device = await this.initializeDevice();
+
       return new Promise((resolve, reject) => {
-        this.device.open(async (err: Error | null) => {
+        device.open(async (err: Error | null) => {
           if (err) {
             console.error("🖨️ Error opening printer:", err);
             reject(err);
@@ -113,7 +233,7 @@ export class PrinterService {
           try {
             const encoding = "CP874";
             const options = { encoding };
-            let printer = new Printer(this.device, options);
+            let printer = new Printer(device, options);
 
             // Print header with restaurant info if available
             if (data.restaurant) {

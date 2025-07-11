@@ -24,8 +24,14 @@ setSocketInstance(io);
 const printerClient = new PrinterSocketClient();
 printerClient.connect();
 
-// Join a specific restaurant room (replace with actual restaurant ID)
-printerClient.joinRestaurant(process.env.RESTAURANT_ID as string);
+// Join printer room for the restaurant (replace with actual restaurant ID)
+const restaurantId = process.env.RESTAURANT_ID;
+if (restaurantId) {
+  printerClient.joinPrinter(restaurantId);
+  console.log("🖨️ Printer joined restaurant:", restaurantId);
+} else {
+  console.warn("⚠️ No RESTAURANT_ID provided in environment variables");
+}
 
 // Middlewares
 app.use(cors());
@@ -35,5 +41,36 @@ app.use(express.json());
 app.get("/", (req, res) => {
   res.send("🖨️ Printer service is running!");
 });
+
+// Graceful shutdown handling
+const gracefulShutdown = (signal: string) => {
+  console.log(`\n🖨️ Received ${signal}. Starting graceful shutdown...`);
+
+  // Disconnect printer client
+  printerClient.disconnect();
+
+  // Close socket.io server
+  io.close(() => {
+    console.log("🖨️ Socket.io server closed");
+  });
+
+  // Close HTTP server
+  server.close(() => {
+    console.log("🖨️ HTTP server closed");
+    process.exit(0);
+  });
+
+  // Force exit after 10 seconds if graceful shutdown fails
+  setTimeout(() => {
+    console.error(
+      "🖨️ Could not close connections in time, forcefully shutting down"
+    );
+    process.exit(1);
+  }, 10000);
+};
+
+// Listen for shutdown signals
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+process.on("SIGINT", () => gracefulShutdown("SIGINT"));
 
 export default app;

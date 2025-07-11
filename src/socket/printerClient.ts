@@ -27,13 +27,6 @@ class PrinterSocketClient {
 
     // Initial availability check
     this.checkPrinterAvailability();
-
-    // Periodic status check every 5 seconds to ensure consistency
-    setInterval(() => {
-      if (this.restaurantId && this.socket?.connected) {
-        this.checkPrinterStatus();
-      }
-    }, 5000);
   }
 
   private setupPrinterMonitoring(): void {

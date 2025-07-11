@@ -32,7 +32,7 @@ jobs:
         run: |
           mkdir -p public
           cp -r fos-printer-app public/
-          cp public/index.html public/
+          # The index.html is already in the public directory from the repository
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3

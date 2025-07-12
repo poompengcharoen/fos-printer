@@ -1,0 +1,29 @@
+{
+  "receipt": {
+    "restaurant": "ร้านอาหาร",
+    "orderReceipt": "ใบเสร็จรับเงิน",
+    "menuQrCode": "QR โค้ดเมนู",
+    "orderNumber": "เลขที่คำสั่งซื้อ:",
+    "date": "วันที่:",
+    "time": "เวลา:",
+    "table": "โต๊ะ:",
+    "status": "สถานะ:",
+    "session": "เซสชัน:",
+    "info": "ข้อมูล:",
+    "unknown": "ไม่ทราบ",
+    "unknownItem": "รายการไม่ทราบ",
+    "itemsOrdered": "รายการที่สั่ง",
+    "price": "ราคา:",
+    "each": "ต่อชิ้น",
+    "total": "รวม:",
+    "note": "หมายเหตุ:",
+    "orderSummary": "สรุปคำสั่งซื้อ",
+    "totalItems": "จำนวนรายการทั้งหมด",
+    "thankYou": "ขอบคุณสำหรับการสั่งซื้อ!",
+    "scanQrToPay": "สแกน QR โค้ดเพื่อชำระเงิน",
+    "scanQrToMenu": "สแกน QR โค้ดเพื่อดูเมนู",
+    "andPlaceOrder": "และสั่งซื้ออาหาร",
+    "qrCodeGenerationFailed": "การสร้าง QR โค้ดล้มเหลว",
+    "url": "URL:"
+  }
+}

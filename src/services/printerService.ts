@@ -1,18 +1,18 @@
+import { Image, Printer } from "@node-escpos/core";
 import {
   FoodAttributes,
-  LocalizedText,
   OrderAttributes,
   OrderItemAttributes,
   RestaurantAttributes,
   TableAttributes,
 } from "../types";
-import { Image, Printer } from "@node-escpos/core";
 
-import QRCode from "qrcode";
 import USB from "@node-escpos/usb-adapter";
 import generatePayload from "promptpay-qr";
+import QRCode from "qrcode";
+import { t, type Locale } from "../i18n";
 
-const locale = (process.env.LOCALE || "en") as keyof LocalizedText;
+const locale = (process.env.LOCALE || "en") as Locale;
 const currency = process.env.CURRENCY || "THB";
 
 // Extended interfaces for the complete order data from backend
@@ -115,7 +115,7 @@ export class PrinterService {
   async isPrinterAvailable(): Promise<boolean> {
     try {
       console.log("🖨️ Checking USB printer availability...");
-      
+
       // Always test the actual connection, don't rely on cached device
       const device = new USB();
 
@@ -131,10 +131,16 @@ export class PrinterService {
           if (err) {
             console.log("🖨️ USB device not available - Error:", err.message);
             console.log("🖨️ Common solutions:");
-            console.log("🖨️ 1. Check if printer is powered on and connected via USB");
+            console.log(
+              "🖨️ 1. Check if printer is powered on and connected via USB"
+            );
             console.log("🖨️ 2. Try reconnecting the USB cable");
-            console.log("🖨️ 3. Check if another application is using the printer");
-            console.log("🖨️ 4. On macOS: System Preferences > Security & Privacy > Privacy > Accessibility");
+            console.log(
+              "🖨️ 3. Check if another application is using the printer"
+            );
+            console.log(
+              "🖨️ 4. On macOS: System Preferences > Security & Privacy > Privacy > Accessibility"
+            );
             resolve(false);
           } else {
             console.log("🖨️ USB printer detected and available!");
@@ -315,7 +321,7 @@ export class PrinterService {
       .align("ct")
       .style("bu")
       .size(1, 1)
-      .text(restaurant.name?.[locale] || "RESTAURANT")
+      .text(restaurant.name?.[locale] || t(locale, "restaurant"))
       .style("normal")
       .size(0, 0)
       .text("");
@@ -324,7 +330,7 @@ export class PrinterService {
     printer
       .style("bu")
       .size(1, 1)
-      .text("ORDER RECEIPT")
+      .text(t(locale, "orderReceipt"))
       .style("normal")
       .size(0, 0)
       .text("");
@@ -341,7 +347,7 @@ export class PrinterService {
       .align("ct")
       .style("bu")
       .size(1, 1)
-      .text(restaurant.name?.[locale] || "RESTAURANT")
+      .text(restaurant.name?.[locale] || t(locale, "restaurant"))
       .style("normal")
       .size(0, 0)
       .text("");
@@ -350,7 +356,7 @@ export class PrinterService {
     printer
       .style("bu")
       .size(1, 1)
-      .text(title || "MENU QR CODE")
+      .text(title || t(locale, "menuQrCode"))
       .style("normal")
       .size(0, 0)
       .text("");
@@ -362,7 +368,7 @@ export class PrinterService {
       .align("ct")
       .style("bu")
       .size(1, 1)
-      .text(title || "MENU QR CODE")
+      .text(title || t(locale, "menuQrCode"))
       .style("normal")
       .size(0, 0)
       .text("");
@@ -371,19 +377,23 @@ export class PrinterService {
   private printQRDetails(printer: any, data: QRCodePrintData): void {
     printer
       .align("lt")
-      .text("Date: " + new Date().toLocaleDateString())
-      .text("Time: " + new Date().toLocaleTimeString());
+      .text(t(locale, "date") + " " + new Date().toLocaleDateString())
+      .text(t(locale, "time") + " " + new Date().toLocaleTimeString());
 
     if (data.table) {
-      printer.text("Table: " + (data.table.name?.[locale] || "Unknown"));
+      printer.text(
+        t(locale, "table") +
+          " " +
+          (data.table.name?.[locale] || t(locale, "unknown"))
+      );
     }
 
     if (data.sessionId) {
-      printer.text("Session: " + data.sessionId.slice(-8));
+      printer.text(t(locale, "session") + " " + data.sessionId.slice(-8));
     }
 
     if (data.subtitle) {
-      printer.text("Info: " + data.subtitle);
+      printer.text(t(locale, "info") + " " + data.subtitle);
     }
 
     printer.text("");
@@ -415,8 +425,8 @@ export class PrinterService {
       console.error("🖨️ Error generating QR code:", qrError);
       printer
         .align("ct")
-        .text("QR Code generation failed")
-        .text("URL: " + url)
+        .text(t(locale, "qrCodeGenerationFailed"))
+        .text(t(locale, "url") + " " + url)
         .text("");
     }
   }
@@ -426,8 +436,8 @@ export class PrinterService {
       .align("ct")
       .style("normal")
       .size(0, 0)
-      .text("Scan QR code to access menu")
-      .text("and place your order")
+      .text(t(locale, "scanQrToMenu"))
+      .text(t(locale, "andPlaceOrder"))
       .drawLine(".")
       .text("");
   }
@@ -435,11 +445,23 @@ export class PrinterService {
   private printOrderDetails(printer: any, order: OrderWithRelations): void {
     printer
       .align("lt")
-      .text("Order #: " + order.id.toString().slice(-8).padStart(6, "0"))
-      .text("Date: " + new Date(order.createdAt).toLocaleDateString())
-      .text("Time: " + new Date(order.createdAt).toLocaleTimeString())
-      .text("Table: " + (order.table?.name?.[locale] || "Unknown"))
-      .text("Status: " + order.status.toUpperCase())
+      .text(
+        t(locale, "orderNumber") +
+          " " +
+          order.id.toString().slice(-8).padStart(6, "0")
+      )
+      .text(
+        t(locale, "date") + " " + new Date(order.createdAt).toLocaleDateString()
+      )
+      .text(
+        t(locale, "time") + " " + new Date(order.createdAt).toLocaleTimeString()
+      )
+      .text(
+        t(locale, "table") +
+          " " +
+          (order.table?.name?.[locale] || t(locale, "unknown"))
+      )
+      .text(t(locale, "status") + " " + order.status.toUpperCase())
       .text("");
 
     // Separator
@@ -448,25 +470,36 @@ export class PrinterService {
 
   private printOrderItems(printer: any, order: OrderWithRelations): void {
     // Items header
-    printer.style("bu").text("ITEMS ORDERED").style("normal").text("");
+    printer
+      .style("bu")
+      .text(t(locale, "itemsOrdered"))
+      .style("normal")
+      .text("");
 
     // Print order items with better formatting
     order.orderItems?.forEach((item, index) => {
       const itemNumber = (index + 1).toString().padStart(2, "0");
       const quantity = item.quantity.toString().padStart(2, " ");
-      const itemName = item.food?.name?.[locale] || "Unknown Item";
+      const itemName = item.food?.name?.[locale] || t(locale, "unknownItem");
       const price = item.food?.price || 0;
       const totalPrice = price * item.quantity;
 
       printer
         .text(`${itemNumber}. ${quantity}x ${itemName}`)
-        .text(`    Price: ${currency}${price.toLocaleString()} each`)
-        .text(`    Total: ${currency}${totalPrice.toLocaleString()}`);
+        .text(
+          `    ${t(locale, "price")} ${currency}${price.toLocaleString()} ${t(
+            locale,
+            "each"
+          )}`
+        )
+        .text(
+          `    ${t(locale, "total")} ${currency}${totalPrice.toLocaleString()}`
+        );
 
       if (item.specialInstructions) {
         printer
           .style("I")
-          .text(`    Note: ${item.specialInstructions}`)
+          .text(`    ${t(locale, "note")} ${item.specialInstructions}`)
           .style("NORMAL");
       }
       printer.text("");
@@ -485,14 +518,23 @@ export class PrinterService {
         return sum + price * item.quantity;
       }, 0) || 0;
 
-    printer.style("bu").text("ORDER SUMMARY").style("normal").text("");
+    printer
+      .style("bu")
+      .text(t(locale, "orderSummary"))
+      .style("normal")
+      .text("");
 
     const encoding = "CP874";
 
     // Summary table
     printer.tableCustom(
       [
-        { text: "Total Items", align: "LEFT", width: 0.6, style: "NORMAL" },
+        {
+          text: t(locale, "totalItems"),
+          align: "LEFT",
+          width: 0.6,
+          style: "NORMAL",
+        },
         {
           text: totalItems.toString(),
           align: "RIGHT",
@@ -505,7 +547,12 @@ export class PrinterService {
 
     printer.tableCustom(
       [
-        { text: "Total", align: "LEFT", width: 0.6, style: "NORMAL" },
+        {
+          text: t(locale, "total"),
+          align: "LEFT",
+          width: 0.6,
+          style: "NORMAL",
+        },
         {
           text: `${currency}${subtotal.toLocaleString()}`,
           align: "RIGHT",
@@ -599,8 +646,8 @@ export class PrinterService {
       .align("ct")
       .style("normal")
       .size(0, 0)
-      .text("Thank you for your order!")
-      .text("Scan QR code to make payment")
+      .text(t(locale, "thankYou"))
+      .text(t(locale, "scanQrToPay"))
       .drawLine(".")
       .text("");
   }

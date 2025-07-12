@@ -52,12 +52,16 @@ ipcMain.handle(
   async (
     event: IpcMainInvokeEvent,
     restaurantId: string,
-    backendUrl: string
+    backendUrl: string,
+    locale: string,
+    currency: string
   ) => {
     try {
       // Set environment variables directly
       process.env.RESTAURANT_ID = restaurantId;
       process.env.BACKEND_URL = backendUrl.replace(/\/$/, "");
+      process.env.LOCALE = locale;
+      process.env.CURRENCY = currency;
 
       // Create printer client and connect
       printerClient = new PrinterSocketClient();
@@ -117,16 +121,16 @@ ipcMain.handle("stop-printer", async (event: IpcMainInvokeEvent) => {
       printerClient.removeAllListeners();
       printerClient.disconnect();
       printerClient = null;
-      
+
       // Notify renderer that printer has stopped
       if (mainWindow) {
         mainWindow.webContents.send("printer-status-update", {
           available: false,
           timestamp: new Date().toISOString(),
-          message: "Printer stopped"
+          message: "Printer stopped",
         });
       }
-      
+
       return { success: true, message: "Printer stopped successfully" };
     }
     return { success: true, message: "No printer process running" };

@@ -223,6 +223,28 @@
           />
         </div>
 
+        <div class="form-group">
+          <label for="locale">Locale</label>
+          <input
+            type="text"
+            id="locale"
+            placeholder="e.g., en, th, ja"
+            value="en"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="currency">Currency</label>
+          <input
+            type="text"
+            id="currency"
+            placeholder="e.g., THB, USD, EUR"
+            value="THB"
+            required
+          />
+        </div>
+
         <div class="button-group">
           <button type="button" id="startBtn" class="btn-start">
             Start Printer
@@ -230,7 +252,12 @@
           <button type="button" id="stopBtn" class="btn-stop" disabled>
             Stop Printer
           </button>
-          <button type="button" id="checkBtn" class="btn-check" style="display: none;">
+          <button
+            type="button"
+            id="checkBtn"
+            class="btn-check"
+            style="display: none"
+          >
             Check Connection
           </button>
         </div>
@@ -275,6 +302,8 @@
       const stopBtn = document.getElementById("stopBtn");
       const checkBtn = document.getElementById("checkBtn");
       const connectionIdInput = document.getElementById("connectionId");
+      const localeInput = document.getElementById("locale");
+      const currencyInput = document.getElementById("currency");
       const statusDiv = document.getElementById("status");
       const logContainer = document.getElementById("logContainer");
       const serverStatusIndicator = document.getElementById(
@@ -352,10 +381,15 @@
         addLogEntry("Starting printer service...", "info");
 
         try {
+          const locale = localeInput.value.trim();
+          const currency = currencyInput.value.trim();
+
           const result = await ipcRenderer.invoke(
             "start-printer",
             restaurantId,
-            backendUrl
+            backendUrl,
+            locale,
+            currency
           );
 
           if (result.success) {

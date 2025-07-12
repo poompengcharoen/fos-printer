@@ -1,0 +1,29 @@
+{
+  "receipt": {
+    "restaurant": "RESTAURANT",
+    "orderReceipt": "ORDER RECEIPT",
+    "menuQrCode": "MENU QR CODE",
+    "orderNumber": "Order #:",
+    "date": "Date:",
+    "time": "Time:",
+    "table": "Table:",
+    "status": "Status:",
+    "session": "Session:",
+    "info": "Info:",
+    "unknown": "Unknown",
+    "unknownItem": "Unknown Item",
+    "itemsOrdered": "ITEMS ORDERED",
+    "price": "Price:",
+    "each": "each",
+    "total": "Total:",
+    "note": "Note:",
+    "orderSummary": "ORDER SUMMARY",
+    "totalItems": "Total Items",
+    "thankYou": "Thank you for your order!",
+    "scanQrToPay": "Scan QR code to make payment",
+    "scanQrToMenu": "Scan QR code to access menu",
+    "andPlaceOrder": "and place your order",
+    "qrCodeGenerationFailed": "QR Code generation failed",
+    "url": "URL:"
+  }
+}

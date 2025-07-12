@@ -41,6 +41,16 @@ jobs:
           node-version: "18"
           cache: yarn
 
+      - name: Cache Electron
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/electron
+            ~/.cache/electron-builder
+          key: electron-${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            electron-${{ runner.os }}-
+
       - name: Install dependencies
         run: yarn install --frozen-lockfile
 

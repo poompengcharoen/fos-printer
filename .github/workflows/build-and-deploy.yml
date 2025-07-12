@@ -53,17 +53,39 @@ jobs:
         run: |
           cd release
 
-          # Create platform-specific zip files
-          if [ "${{ matrix.platform }}" = "mac" ]; then
-            zip -r ../${{ matrix.artifact-name }}.zip "Food Order Printer-1.0.0-arm64.dmg"
-          elif [ "${{ matrix.platform }}" = "win" ]; then
-            zip -r ../${{ matrix.artifact-name }}.zip "Food Order Printer Setup 1.0.0.exe"
-          elif [ "${{ matrix.platform }}" = "linux" ]; then
-            zip -r ../${{ matrix.artifact-name }}.zip "Food Order Printer-1.0.0-arm64.AppImage"
-          fi
+          # List all files in release directory for debugging
+          echo "Files in release directory:"
+          ls -la
 
-          # Create all-platforms zip
-          zip -r ../fos-printer-app.zip "Food Order Printer-1.0.0-arm64.dmg" "Food Order Printer Setup 1.0.0.exe" "Food Order Printer-1.0.0-arm64.AppImage" 2>/dev/null || true
+          # Create platform-specific zip files with flexible file matching
+          if [ "${{ matrix.platform }}" = "mac" ]; then
+            # Find macOS DMG file
+            DMG_FILE=$(find . -name "*.dmg" -type f | head -1)
+            if [ -n "$DMG_FILE" ]; then
+              zip -r ../${{ matrix.artifact-name }}.zip "$DMG_FILE"
+              echo "✅ Created ${{ matrix.artifact-name }}.zip with $DMG_FILE"
+            else
+              echo "⚠️  No DMG file found for macOS"
+            fi
+          elif [ "${{ matrix.platform }}" = "win" ]; then
+            # Find Windows EXE file
+            EXE_FILE=$(find . -name "*.exe" -type f | head -1)
+            if [ -n "$EXE_FILE" ]; then
+              zip -r ../${{ matrix.artifact-name }}.zip "$EXE_FILE"
+              echo "✅ Created ${{ matrix.artifact-name }}.zip with $EXE_FILE"
+            else
+              echo "⚠️  No EXE file found for Windows"
+            fi
+          elif [ "${{ matrix.platform }}" = "linux" ]; then
+            # Find Linux AppImage file
+            APPIMAGE_FILE=$(find . -name "*.AppImage" -type f | head -1)
+            if [ -n "$APPIMAGE_FILE" ]; then
+              zip -r ../${{ matrix.artifact-name }}.zip "$APPIMAGE_FILE"
+              echo "✅ Created ${{ matrix.artifact-name }}.zip with $APPIMAGE_FILE"
+            else
+              echo "⚠️  No AppImage file found for Linux"
+            fi
+          fi
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -102,27 +124,45 @@ jobs:
           # We'll use the artifacts from the matrix builds
           # This step just ensures we have the right environment for creating zips
 
-      - name: Create final zip files
+            - name: Create final zip files
         run: |
           # Extract artifacts from matrix builds
           find artifacts -name "*.zip" -exec unzip -o {} \;
-
-          # Create platform-specific zip files from extracted artifacts
-          if [ -f "Food Order Printer-1.0.0-arm64.dmg" ]; then
-            zip -r fos-printer-mac.zip "Food Order Printer-1.0.0-arm64.dmg"
+          
+          echo "Files after extraction:"
+          ls -la
+          
+          # Create platform-specific zip files from extracted artifacts with flexible matching
+          DMG_FILE=$(find . -name "*.dmg" -type f | head -1)
+          if [ -n "$DMG_FILE" ]; then
+            zip -r fos-printer-mac.zip "$DMG_FILE"
+            echo "✅ Created fos-printer-mac.zip with $DMG_FILE"
+          else
+            echo "⚠️  No DMG file found for macOS"
+          fi
+          
+          EXE_FILE=$(find . -name "*.exe" -type f | head -1)
+          if [ -n "$EXE_FILE" ]; then
+            zip -r fos-printer-win.zip "$EXE_FILE"
+            echo "✅ Created fos-printer-win.zip with $EXE_FILE"
+          else
+            echo "⚠️  No EXE file found for Windows"
+          fi
+          
+          APPIMAGE_FILE=$(find . -name "*.AppImage" -type f | head -1)
+          if [ -n "$APPIMAGE_FILE" ]; then
+            zip -r fos-printer-linux.zip "$APPIMAGE_FILE"
+            echo "✅ Created fos-printer-linux.zip with $APPIMAGE_FILE"
+          else
+            echo "⚠️  No AppImage file found for Linux"
           fi
 
-          if [ -f "Food Order Printer Setup 1.0.0.exe" ]; then
-            zip -r fos-printer-win.zip "Food Order Printer Setup 1.0.0.exe"
-          fi
-
-          if [ -f "Food Order Printer-1.0.0-arm64.AppImage" ]; then
-            zip -r fos-printer-linux.zip "Food Order Printer-1.0.0-arm64.AppImage"
-          fi
-
-          # Create all-platforms zip if all files exist
-          if [ -f "Food Order Printer-1.0.0-arm64.dmg" ] && [ -f "Food Order Printer Setup 1.0.0.exe" ] && [ -f "Food Order Printer-1.0.0-arm64.AppImage" ]; then
-            zip -r fos-printer-app.zip "Food Order Printer-1.0.0-arm64.dmg" "Food Order Printer Setup 1.0.0.exe" "Food Order Printer-1.0.0-arm64.AppImage"
+          # Create all-platforms zip if files exist
+          if [ -n "$DMG_FILE" ] && [ -n "$EXE_FILE" ] && [ -n "$APPIMAGE_FILE" ]; then
+            zip -r fos-printer-app.zip "$DMG_FILE" "$EXE_FILE" "$APPIMAGE_FILE"
+            echo "✅ Created fos-printer-app.zip with all platform files"
+          else
+            echo "⚠️  Not all platform files found, skipping all-platforms zip"
           fi
 
       - name: Create version.json

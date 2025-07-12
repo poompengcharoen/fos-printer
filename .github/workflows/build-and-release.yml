@@ -87,16 +87,62 @@ jobs:
 
       - name: Create release package
         run: |
+          echo "=== STARTING RELEASE PACKAGE CREATION ==="
+          echo "Current directory: $(pwd)"
+          echo "Contents of current directory:"
+          ls -la
+
           mkdir -p pages
           cd artifacts
 
+          echo "=== ARTIFACTS DIRECTORY CONTENTS ==="
+          echo "Current directory: $(pwd)"
+          echo "Contents:"
+          ls -la
+          echo "Total artifacts size: $(du -sh .)"
+
+          echo "=== DETAILED ARTIFACT ANALYSIS ==="
+          for platform in fos-printer-*; do
+            if [ -d "$platform" ]; then
+              echo ""
+              echo "--- PLATFORM: $platform ---"
+              echo "Directory size: $(du -sh "$platform")"
+              echo "Contents:"
+              ls -la "$platform"
+              
+              echo ""
+              echo "--- RECURSIVE CONTENTS OF $platform ---"
+              find "$platform" -type f -exec ls -lh {} \; | head -20
+              echo "... (showing first 20 files)"
+              
+              echo ""
+              echo "--- LARGEST FILES IN $platform ---"
+              find "$platform" -type f -exec du -h {} \; | sort -hr | head -10
+              
+              echo ""
+              echo "--- FILE TYPES IN $platform ---"
+              find "$platform" -type f | sed 's/.*\.//' | sort | uniq -c | sort -nr
+            fi
+          done
+
+          echo ""
+          echo "=== COPYING FILES TO PAGES ==="
           # Copy individual platform files directly (no zipping of DMG/AppImage)
           for platform in fos-printer-*; do
             if [ -d "$platform" ]; then
+              echo ""
+              echo "--- PROCESSING $platform ---"
               cd "$platform"
+              echo "Current directory: $(pwd)"
+              
               # Copy only the final distributable files (exclude build artifacts)
+              echo "Finding distributable files..."
               find . -maxdepth 1 -name "*.dmg" -o -name "*.exe" -o -name "*.AppImage" -o -name "*.deb" -o -name "*.rpm" | while read -r file; do
+                echo "Found file: $file"
+                echo "File size: $(ls -lh "$file")"
+                echo "Copying: $file to ../../pages/"
                 cp "$file" "../../pages/"
+                echo "Copy completed for: $file"
               done
               cd ..
             fi
@@ -104,17 +150,66 @@ jobs:
 
           cd ..
 
+          echo ""
+          echo "=== PAGES DIRECTORY AFTER COPYING ==="
+          echo "Current directory: $(pwd)"
+          echo "Pages directory contents:"
+          ls -la pages/
+          echo "Pages directory size: $(du -sh pages/)"
+
+          echo ""
+          echo "=== DETAILED PAGES CONTENTS ==="
+          find pages/ -type f -exec ls -lh {} \;
+
+          echo ""
+          echo "=== CREATING COMBINED ZIP ==="
           # Create a simple zip with just the executables (no nested directories)
           cd pages
+          echo "Current directory: $(pwd)"
+          echo "Files to zip:"
+          ls -la *.dmg *.exe *.AppImage *.deb *.rpm 2>/dev/null || echo "No matching files found"
+
           zip fos-printer-app.zip *.dmg *.exe *.AppImage *.deb *.rpm 2>/dev/null || true
+          echo "Zip file created:"
+          ls -la fos-printer-app.zip
+          echo "Zip file size: $(du -h fos-printer-app.zip)"
           cd ..
 
+          echo ""
+          echo "=== FINAL PAGES DIRECTORY ==="
+          echo "Current directory: $(pwd)"
+          echo "Pages directory contents:"
+          ls -la pages/
+          echo "Pages directory size: $(du -sh pages/)"
+
+          echo ""
+          echo "=== COPYING WEB FILES ==="
           # Copy HTML page and create version info for GitHub Pages
+          echo "Copying docs/index.html..."
           cp docs/index.html pages/
+          echo "HTML file copied"
 
           # Create version.json with commit SHA
           VERSION="dev-${GITHUB_SHA::8}"
+          echo "Creating version.json with version: $VERSION"
           echo '{"version": "'$VERSION'", "buildDate": "'$(date -u +"%Y-%m-%dT%H:%M:%SZ")'"}' > pages/version.json
+          echo "Version file created"
+
+          echo ""
+          echo "=== FINAL PAGES DIRECTORY CONTENTS ==="
+          ls -la pages/
+          echo "Final pages directory size: $(du -sh pages/)"
+
+          echo ""
+          echo "=== SUMMARY ==="
+          echo "Individual files in pages/:"
+          find pages/ -type f -name "*.dmg" -o -name "*.exe" -o -name "*.AppImage" -o -name "*.deb" -o -name "*.rpm" | while read -r file; do
+            echo "  $(basename "$file"): $(du -h "$file" | cut -f1)"
+          done
+          echo "Combined zip: $(du -h pages/fos-printer-app.zip | cut -f1)"
+          echo "Total pages size: $(du -sh pages/ | cut -f1)"
+
+          echo "=== RELEASE PACKAGE CREATION COMPLETE ==="
 
       - name: Setup Pages
         uses: actions/configure-pages@v4

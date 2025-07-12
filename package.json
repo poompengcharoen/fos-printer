@@ -59,6 +59,7 @@
     "directories": {
       "output": "release"
     },
+    "icon": "src/assets/icon.png",
     "files": [
       "dist/**/*",
       "node_modules/**/*",

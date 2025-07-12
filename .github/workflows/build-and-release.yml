@@ -8,6 +8,11 @@ on:
       - v*
   workflow_dispatch: null
 
+permissions:
+  contents: read
+  id-token: write
+  pages: write
+
 jobs:
   build:
     runs-on: "${{ matrix.os }}"

@@ -97,8 +97,13 @@ jobs:
           # Copy HTML page and create version info
           cp docs/index.html dist/
 
-          # Create version.json with current tag
-          echo '{"version": "'${GITHUB_REF#refs/tags/}'", "buildDate": "'$(date -u +"%Y-%m-%dT%H:%M:%SZ")'"}' > dist/version.json
+          # Create version.json with current tag or commit SHA
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/}
+          else
+            VERSION="dev-${GITHUB_SHA::8}"
+          fi
+          echo '{"version": "'$VERSION'", "buildDate": "'$(date -u +"%Y-%m-%dT%H:%M:%SZ")'"}' > dist/version.json
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
@@ -113,6 +118,7 @@ jobs:
         uses: actions/deploy-pages@v4
 
       - name: Create Release
+        if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v1
         with:
           files: |

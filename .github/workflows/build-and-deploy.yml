@@ -102,6 +102,10 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.event_name == 'release'
 
     steps:
@@ -136,6 +140,18 @@ jobs:
 
           echo "Files after extraction:"
           ls -la
+
+          # Check if release directory exists and what's in it
+          if [ -d "release" ]; then
+            echo "Release directory contents:"
+            ls -la release/
+          else
+            echo "⚠️  Release directory not found"
+          fi
+
+          # Look for built files in various locations
+          echo "Searching for built files:"
+          find . -name "*.dmg" -o -name "*.exe" -o -name "*.AppImage" | head -10
 
           # Create platform-specific zip files from extracted artifacts with flexible matching
           DMG_FILE=$(find . -name "*.dmg" -type f | head -1)
@@ -180,8 +196,34 @@ jobs:
 
       - name: Copy files to docs
         run: |
-          cp fos-printer-*.zip docs/
-          cp version.json docs/
+          # Ensure docs directory exists
+          mkdir -p docs
+
+          # Copy zip files if they exist
+          if ls fos-printer-*.zip 1> /dev/null 2>&1; then
+            cp fos-printer-*.zip docs/
+            echo "✅ Copied zip files to docs/"
+          else
+            echo "⚠️  No zip files found to copy"
+          fi
+
+          # Copy version.json if it exists
+          if [ -f version.json ]; then
+            cp version.json docs/
+            echo "✅ Copied version.json to docs/"
+          else
+            echo "⚠️  version.json not found"
+          fi
+
+          # Ensure index.html exists in docs (copy from existing if needed)
+          if [ ! -f "docs/index.html" ] && [ -f "index.html" ]; then
+            cp index.html docs/
+            echo "✅ Copied index.html to docs/"
+          fi
+
+          # List contents of docs directory
+          echo "Contents of docs directory:"
+          ls -la docs/
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
@@ -189,3 +231,5 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./docs
           force_orphan: true
+          user_name: "github-actions[bot]"
+          user_email: "github-actions[bot]@users.noreply.github.com"

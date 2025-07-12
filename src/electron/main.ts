@@ -18,7 +18,7 @@ function createWindow() {
       contextIsolation: false,
     },
     icon: path.join(__dirname, "../assets/icon.png"),
-    title: "Food Order Printer",
+    title: "Food Order System | Printer",
   });
 
   mainWindow.loadFile(path.join(__dirname, "../renderer/index.html"));

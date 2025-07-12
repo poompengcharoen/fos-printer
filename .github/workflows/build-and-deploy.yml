@@ -3,8 +3,6 @@ name: Build and Deploy Electron App
 on:
   push:
     branches: [main]
-  pull_request:
-    branches: [main]
   release:
     types: [published]
 
@@ -42,7 +40,14 @@ jobs:
         run: yarn install --frozen-lockfile
 
       - name: Build Electron app
-        run: yarn electron:build:all
+        run: |
+          if [ "${{ matrix.platform }}" = "mac" ]; then
+            yarn electron:build:mac
+          elif [ "${{ matrix.platform }}" = "win" ]; then
+            yarn electron:build:win
+          elif [ "${{ matrix.platform }}" = "linux" ]; then
+            yarn electron:build:linux
+          fi
 
       - name: Create zip files
         run: |
@@ -92,20 +97,33 @@ jobs:
       - name: Install dependencies
         run: yarn install --frozen-lockfile
 
-      - name: Build Electron app (for latest artifacts)
-        run: yarn electron:build:all
+      - name: Setup build environment
+        run: |
+          # We'll use the artifacts from the matrix builds
+          # This step just ensures we have the right environment for creating zips
 
       - name: Create final zip files
         run: |
-          cd release
+          # Extract artifacts from matrix builds
+          find artifacts -name "*.zip" -exec unzip -o {} \;
 
-          # Create platform-specific zip files
-          zip -r ../fos-printer-mac.zip "Food Order Printer-1.0.0-arm64.dmg"
-          zip -r ../fos-printer-win.zip "Food Order Printer Setup 1.0.0.exe"
-          zip -r ../fos-printer-linux.zip "Food Order Printer-1.0.0-arm64.AppImage"
+          # Create platform-specific zip files from extracted artifacts
+          if [ -f "Food Order Printer-1.0.0-arm64.dmg" ]; then
+            zip -r fos-printer-mac.zip "Food Order Printer-1.0.0-arm64.dmg"
+          fi
 
-          # Create all-platforms zip
-          zip -r ../fos-printer-app.zip "Food Order Printer-1.0.0-arm64.dmg" "Food Order Printer Setup 1.0.0.exe" "Food Order Printer-1.0.0-arm64.AppImage"
+          if [ -f "Food Order Printer Setup 1.0.0.exe" ]; then
+            zip -r fos-printer-win.zip "Food Order Printer Setup 1.0.0.exe"
+          fi
+
+          if [ -f "Food Order Printer-1.0.0-arm64.AppImage" ]; then
+            zip -r fos-printer-linux.zip "Food Order Printer-1.0.0-arm64.AppImage"
+          fi
+
+          # Create all-platforms zip if all files exist
+          if [ -f "Food Order Printer-1.0.0-arm64.dmg" ] && [ -f "Food Order Printer Setup 1.0.0.exe" ] && [ -f "Food Order Printer-1.0.0-arm64.AppImage" ]; then
+            zip -r fos-printer-app.zip "Food Order Printer-1.0.0-arm64.dmg" "Food Order Printer Setup 1.0.0.exe" "Food Order Printer-1.0.0-arm64.AppImage"
+          fi
 
       - name: Create version.json
         run: |

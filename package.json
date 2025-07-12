@@ -10,8 +10,12 @@
     "electron:dev": "concurrently \"yarn build:watch\" \"wait-on dist/app.js && electron .\"",
     "electron:build": "yarn build && electron-builder",
     "electron:build:all": "yarn build && electron-builder -mwl",
+    "electron:build:mac": "yarn build && electron-builder -m",
+    "electron:build:win": "yarn build && electron-builder -w",
     "electron:build:linux": "yarn build && electron-builder -l",
     "create-zips:linux": "./scripts/create-zips.sh linux",
+    "create-zips:mac": "./scripts/create-zips.sh mac",
+    "create-zips:win": "./scripts/create-zips.sh win",
     "build:watch": "tsc --watch",
     "copy-files": "cp -r src/renderer dist/ && cp -r src/assets dist/ 2>/dev/null || true",
     "create-zips": "./scripts/create-zips.sh"

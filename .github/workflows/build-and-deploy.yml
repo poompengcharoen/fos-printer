@@ -73,7 +73,8 @@ jobs:
             # Find Windows EXE file
             EXE_FILE=$(find . -name "*.exe" -type f | head -1)
             if [ -n "$EXE_FILE" ]; then
-              zip -r ../${{ matrix.artifact-name }}.zip "$EXE_FILE"
+              # Use PowerShell to create zip on Windows
+              powershell -Command "Compress-Archive -Path '$EXE_FILE' -DestinationPath '../${{ matrix.artifact-name }}.zip' -Force"
               echo "✅ Created ${{ matrix.artifact-name }}.zip with $EXE_FILE"
             else
               echo "⚠️  No EXE file found for Windows"

@@ -64,28 +64,83 @@ jobs:
             # Find macOS DMG file
             DMG_FILE=$(find . -name "*.dmg" -type f | head -1)
             if [ -n "$DMG_FILE" ]; then
-              # Create README.md in release directory
+              # Create README.md in release directory (English)
               echo "# Food Order Printer - macOS Installation" > README.md
               echo "" >> README.md
               echo "## If you see \"damaged\" error when trying to open the app:" >> README.md
               echo "" >> README.md
-              echo "1. Open Terminal (Applications > Utilities > Terminal)" >> README.md
-              echo "2. Navigate to where you extracted the DMG file" >> README.md
-              echo "3. Run this command:" >> README.md
-              echo "   \`\`\`bash" >> README.md
-              echo "   xattr -cr \"Food Order Printer.app\"" >> README.md
-              echo "   \`\`\`" >> README.md
-              echo "4. Now you can open the app normally" >> README.md
+              echo "### Method 1: Using Terminal (Recommended)" >> README.md
+              echo "" >> README.md
+              echo "1. **Open Terminal:**" >> README.md
+              echo "   - Press `Cmd + Space` to open Spotlight Search" >> README.md
+              echo "   - Type \"Terminal\" and press Enter" >> README.md
+              echo "   - Or go to Applications > Utilities > Terminal" >> README.md
+              echo "" >> README.md
+              echo "2. **Navigate to your Downloads folder:**" >> README.md
+              echo "   - In the Terminal window, type: \`cd Downloads\`" >> README.md
+              echo "   - Press Enter" >> README.md
+              echo "" >> README.md
+              echo "3. **Run the security command:**" >> README.md
+              echo "   - Copy and paste this command: \`xattr -cr \"Food Order Printer.app\"\`" >> README.md
+              echo "   - Press Enter" >> README.md
+              echo "   - You should see no output (this is normal)" >> README.md
+              echo "" >> README.md
+              echo "4. **Open the app:**" >> README.md
+              echo "   - Now you can double-click \"Food Order Printer.app\" to open it normally" >> README.md
+              echo "" >> README.md
+              echo "### Method 2: Right-click Method (Easier)" >> README.md
+              echo "" >> README.md
+              echo "1. **Right-click** on \"Food Order Printer.app\"" >> README.md
+              echo "2. Select **\"Open\"** from the context menu" >> README.md
+              echo "3. Click **\"Open\"** in the security dialog that appears" >> README.md
+              echo "4. The app will now open and remember this choice for future launches" >> README.md
               echo "" >> README.md
               echo "## Why this happens:" >> README.md
               echo "macOS Gatekeeper blocks unsigned apps for security. This is normal for open-source projects that aren't code-signed with an Apple Developer certificate." >> README.md
               echo "" >> README.md
-              echo "## Alternative method:" >> README.md
-              echo "Right-click the app and select \"Open\" from the context menu, then click \"Open\" in the security dialog." >> README.md
+              echo "## Need help?" >> README.md
+              echo "If you're still having trouble, try Method 2 first as it's simpler. Method 1 is more permanent but requires using Terminal." >> README.md
               
-              # Create zip with both DMG and README
-              zip -r "../${{ matrix.artifact-name }}.zip" "$DMG_FILE" README.md
-              echo "✅ Created ${{ matrix.artifact-name }}.zip with $DMG_FILE and README.md"
+              # Create README_TH.md in release directory (Thai)
+              echo "# Food Order Printer - การติดตั้งบน macOS" > README_TH.md
+              echo "" >> README_TH.md
+              echo "## หากคุณเห็นข้อผิดพลาด \"เสียหาย\" เมื่อพยายามเปิดแอป:" >> README_TH.md
+              echo "" >> README_TH.md
+              echo "### วิธีที่ 1: ใช้ Terminal (แนะนำ)" >> README_TH.md
+              echo "" >> README_TH.md
+              echo "1. **เปิด Terminal:**" >> README_TH.md
+              echo "   - กด `Cmd + Space` เพื่อเปิด Spotlight Search" >> README_TH.md
+              echo "   - พิมพ์ \"Terminal\" และกด Enter" >> README_TH.md
+              echo "   - หรือไปที่ Applications > Utilities > Terminal" >> README_TH.md
+              echo "" >> README_TH.md
+              echo "2. **ไปที่โฟลเดอร์ Downloads:**" >> README_TH.md
+              echo "   - ในหน้าต่าง Terminal พิมพ์: \`cd Downloads\`" >> README_TH.md
+              echo "   - กด Enter" >> README_TH.md
+              echo "" >> README_TH.md
+              echo "3. **รันคำสั่งความปลอดภัย:**" >> README_TH.md
+              echo "   - คัดลอกและวางคำสั่งนี้: \`xattr -cr \"Food Order Printer.app\"\`" >> README_TH.md
+              echo "   - กด Enter" >> README_TH.md
+              echo "   - คุณจะไม่เห็นผลลัพธ์ใดๆ (นี่เป็นเรื่องปกติ)" >> README_TH.md
+              echo "" >> README_TH.md
+              echo "4. **เปิดแอป:**" >> README_TH.md
+              echo "   - ตอนนี้คุณสามารถดับเบิลคลิก \"Food Order Printer.app\" เพื่อเปิดได้ตามปกติ" >> README_TH.md
+              echo "" >> README_TH.md
+              echo "### วิธีที่ 2: วิธีคลิกขวา (ง่ายกว่า)" >> README_TH.md
+              echo "" >> README_TH.md
+              echo "1. **คลิกขวา** บน \"Food Order Printer.app\"" >> README_TH.md
+              echo "2. เลือก **\"เปิด\"** จากเมนู" >> README_TH.md
+              echo "3. คลิก **\"เปิด\"** ในกล่องโต้ตอบความปลอดภัยที่ปรากฏ" >> README_TH.md
+              echo "4. แอปจะเปิดและจำการเลือกนี้สำหรับการเปิดครั้งต่อไป" >> README_TH.md
+              echo "" >> README_TH.md
+              echo "## ทำไมถึงเป็นแบบนี้:" >> README_TH.md
+              echo "macOS Gatekeeper จะบล็อกแอปที่ไม่ได้ลงนามเพื่อความปลอดภัย นี่เป็นเรื่องปกติสำหรับโปรเจกต์โอเพนซอร์สที่ไม่ได้ลงนามด้วยใบรับรอง Apple Developer" >> README_TH.md
+              echo "" >> README_TH.md
+              echo "## ต้องการความช่วยเหลือ?" >> README_TH.md
+              echo "หากคุณยังมีปัญหา ลองใช้วิธีที่ 2 ก่อนเพราะง่ายกว่า วิธีที่ 1 จะแก้ปัญหาแบบถาวรแต่ต้องใช้ Terminal" >> README_TH.md
+              
+              # Create zip with DMG and both README files
+              zip -r "../${{ matrix.artifact-name }}.zip" "$DMG_FILE" README.md README_TH.md
+              echo "✅ Created ${{ matrix.artifact-name }}.zip with $DMG_FILE, README.md, and README_TH.md"
             else
               echo "❌ No DMG file found for macOS - build may have failed"
               exit 1

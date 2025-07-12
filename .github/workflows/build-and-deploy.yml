@@ -114,7 +114,7 @@ jobs:
               echo "   - หรือไปที่ Applications > Utilities > Terminal" >> README_TH.md
               echo "" >> README_TH.md
               echo "2. **ไปที่โฟลเดอร์ Downloads:**" >> README_TH.md
-              echo "   - ในหน้าต่าง Terminal พิมพ์: \`cd Downloads\`" >> README_TH.md
+              echo "   - ในหน้าต่าง Terminal พิมพ์: \`cd Downloads/FOS\\ Printer\\ App/fos-printer-mac\`" >> README_TH.md
               echo "   - กด Enter" >> README_TH.md
               echo "" >> README_TH.md
               echo "3. **รันคำสั่งความปลอดภัย:**" >> README_TH.md

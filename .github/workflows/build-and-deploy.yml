@@ -67,7 +67,8 @@ jobs:
               zip -r ../${{ matrix.artifact-name }}.zip "$DMG_FILE"
               echo "✅ Created ${{ matrix.artifact-name }}.zip with $DMG_FILE"
             else
-              echo "⚠️  No DMG file found for macOS"
+              echo "❌ No DMG file found for macOS - build may have failed"
+              exit 1
             fi
           elif [ "${{ matrix.platform }}" = "win" ]; then
             # Find Windows EXE file
@@ -77,7 +78,8 @@ jobs:
               powershell -Command "Compress-Archive -Path '$EXE_FILE' -DestinationPath '../${{ matrix.artifact-name }}.zip' -Force"
               echo "✅ Created ${{ matrix.artifact-name }}.zip with $EXE_FILE"
             else
-              echo "⚠️  No EXE file found for Windows"
+              echo "❌ No EXE file found for Windows - build may have failed"
+              exit 1
             fi
           elif [ "${{ matrix.platform }}" = "linux" ]; then
             # Find Linux AppImage file
@@ -86,27 +88,36 @@ jobs:
               zip -r ../${{ matrix.artifact-name }}.zip "$APPIMAGE_FILE"
               echo "✅ Created ${{ matrix.artifact-name }}.zip with $APPIMAGE_FILE"
             else
-              echo "⚠️  No AppImage file found for Linux"
+              echo "❌ No AppImage file found for Linux - build may have failed"
+              exit 1
             fi
           fi
+
+          # Verify zip file was created
+          if [ ! -f "../${{ matrix.artifact-name }}.zip" ]; then
+            echo "❌ Zip file was not created successfully"
+            exit 1
+          fi
+
+          echo "✅ Zip file verification complete: ${{ matrix.artifact-name }}.zip"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact-name }}-${{ matrix.os }}
-          path: |
-            ${{ matrix.artifact-name }}.zip
-            fos-printer-app.zip
+          path: ${{ matrix.artifact-name }}.zip
           retention-days: 30
 
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.event_name == 'release'
     permissions:
-      contents: write
       pages: write
       id-token: write
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.event_name == 'release'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
       - name: Checkout code
@@ -121,115 +132,92 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "18"
-          cache: "yarn"
-
-      - name: Install dependencies
-        run: yarn install --frozen-lockfile
-
-      - name: Setup build environment
-        shell: bash
-        run: |
-          # We'll use the artifacts from the matrix builds
-          # This step just ensures we have the right environment for creating zips
 
       - name: Create final zip files
-        shell: bash
         run: |
-          # Extract artifacts from matrix builds
-          find artifacts -name "*.zip" -exec unzip -o {} \;
+          echo "📦 Creating final zip files for GitHub Pages..."
 
-          echo "Files after extraction:"
-          ls -la
-
-          # Check if release directory exists and what's in it
-          if [ -d "release" ]; then
-            echo "Release directory contents:"
-            ls -la release/
-          else
-            echo "⚠️  Release directory not found"
-          fi
-
-          # Look for built files in various locations
-          echo "Searching for built files:"
-          find . -name "*.dmg" -o -name "*.exe" -o -name "*.AppImage" | head -10
-
-          # Create platform-specific zip files from extracted artifacts with flexible matching
-          DMG_FILE=$(find . -name "*.dmg" -type f | head -1)
-          if [ -n "$DMG_FILE" ]; then
-            zip -r fos-printer-mac.zip "$DMG_FILE"
-            echo "✅ Created fos-printer-mac.zip with $DMG_FILE"
-          else
-            echo "⚠️  No DMG file found for macOS"
-          fi
-
-          EXE_FILE=$(find . -name "*.exe" -type f | head -1)
-          if [ -n "$EXE_FILE" ]; then
-            zip -r fos-printer-win.zip "$EXE_FILE"
-            echo "✅ Created fos-printer-win.zip with $EXE_FILE"
-          else
-            echo "⚠️  No EXE file found for Windows"
-          fi
-
-          APPIMAGE_FILE=$(find . -name "*.AppImage" -type f | head -1)
-          if [ -n "$APPIMAGE_FILE" ]; then
-            zip -r fos-printer-linux.zip "$APPIMAGE_FILE"
-            echo "✅ Created fos-printer-linux.zip with $APPIMAGE_FILE"
-          else
-            echo "⚠️  No AppImage file found for Linux"
-          fi
-
-          # Create all-platforms zip if files exist
-          if [ -n "$DMG_FILE" ] && [ -n "$EXE_FILE" ] && [ -n "$APPIMAGE_FILE" ]; then
-            zip -r fos-printer-app.zip "$DMG_FILE" "$EXE_FILE" "$APPIMAGE_FILE"
-            echo "✅ Created fos-printer-app.zip with all platform files"
-          else
-            echo "⚠️  Not all platform files found, skipping all-platforms zip"
-          fi
-
-      - name: Create version.json
-        run: |
-          echo '{
-            "version": "${{ github.ref_name }}",
-            "buildDate": "${{ github.event.head_commit.timestamp }}",
-            "commit": "${{ github.sha }}"
-          }' > version.json
-
-      - name: Copy files to docs
-        run: |
-          # Ensure docs directory exists
+          # Create docs directory if it doesn't exist
           mkdir -p docs
 
-          # Copy zip files if they exist
-          if ls fos-printer-*.zip 1> /dev/null 2>&1; then
-            cp fos-printer-*.zip docs/
-            echo "✅ Copied zip files to docs/"
+          # Copy the index.html to docs (if it exists)
+          if [ -f "docs/index.html" ]; then
+            echo "✅ index.html found and copied"
           else
-            echo "⚠️  No zip files found to copy"
+            echo "❌ Error: docs/index.html not found"
+            exit 1
           fi
 
-          # Copy version.json if it exists
-          if [ -f version.json ]; then
-            cp version.json docs/
-            echo "✅ Copied version.json to docs/"
+          # Find and copy zip files from artifacts
+          echo "📁 Copying zip files from artifacts..."
+          ZIP_COUNT=0
+          find artifacts -name "*.zip" -type f | while read file; do
+            filename=$(basename "$file")
+            echo "  📋 Copying $filename to docs/"
+            cp "$file" "docs/$filename"
+            ZIP_COUNT=$((ZIP_COUNT + 1))
+          done
+
+          # Check if we have the expected zip files
+          echo "📊 Checking zip files..."
+          if [ -f "docs/fos-printer-mac.zip" ] && [ -f "docs/fos-printer-win.zip" ] && [ -f "docs/fos-printer-linux.zip" ]; then
+            echo "✅ All platform-specific zip files found"
+            
+            # Create all-platforms zip
+            echo "📦 Creating fos-printer-app.zip with all platforms..."
+            cd docs
+            zip fos-printer-app.zip fos-printer-mac.zip fos-printer-win.zip fos-printer-linux.zip
+            cd ..
+            echo "✅ fos-printer-app.zip created"
           else
-            echo "⚠️  version.json not found"
+            echo "⚠️  Missing some platform zip files:"
+            ls -la docs/*.zip 2>/dev/null || echo "No zip files found"
           fi
 
-          # Ensure index.html exists in docs (copy from existing if needed)
-          if [ ! -f "docs/index.html" ] && [ -f "index.html" ]; then
-            cp index.html docs/
-            echo "✅ Copied index.html to docs/"
-          fi
+          # Get version from package.json
+          VERSION=$(node -p "require('./package.json').version")
+          echo "📝 Creating version.json with version: $VERSION"
+          cat > docs/version.json << EOF
+          {
+            "version": "$VERSION",
+            "buildDate": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
+            "commit": "${{ github.sha }}",
+            "buildNumber": "${{ github.run_number }}"
+          }
+          EOF
 
-          # List contents of docs directory
-          echo "Contents of docs directory:"
+          # List files in docs directory
+          echo "📋 Files in docs directory:"
           ls -la docs/
 
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
+          # Verify required files exist
+          echo "🔍 Verifying required files for deployment..."
+          REQUIRED_FILES=("index.html" "version.json" "fos-printer-mac.zip" "fos-printer-win.zip" "fos-printer-linux.zip" "fos-printer-app.zip")
+          MISSING_FILES=()
+
+          for file in "${REQUIRED_FILES[@]}"; do
+            if [ ! -f "docs/$file" ]; then
+              MISSING_FILES+=("$file")
+            else
+              echo "✅ $file found"
+            fi
+          done
+
+          if [ ${#MISSING_FILES[@]} -gt 0 ]; then
+            echo "❌ Missing required files: ${MISSING_FILES[*]}"
+            exit 1
+          fi
+
+          echo "🎉 All required files verified successfully!"
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./docs
-          force_orphan: true
-          user_name: "github-actions[bot]"
-          user_email: "github-actions[bot]@users.noreply.github.com"
+          path: ./docs
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

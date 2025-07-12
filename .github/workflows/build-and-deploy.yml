@@ -40,6 +40,7 @@ jobs:
         run: yarn install --frozen-lockfile
 
       - name: Build Electron app
+        shell: bash
         run: |
           if [ "${{ matrix.platform }}" = "mac" ]; then
             yarn electron:build:mac
@@ -50,6 +51,7 @@ jobs:
           fi
 
       - name: Create zip files
+        shell: bash
         run: |
           cd release
 
@@ -120,11 +122,13 @@ jobs:
         run: yarn install --frozen-lockfile
 
       - name: Setup build environment
+        shell: bash
         run: |
           # We'll use the artifacts from the matrix builds
           # This step just ensures we have the right environment for creating zips
 
       - name: Create final zip files
+        shell: bash
         run: |
           # Extract artifacts from matrix builds
           find artifacts -name "*.zip" -exec unzip -o {} \;

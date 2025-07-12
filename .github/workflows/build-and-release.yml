@@ -62,7 +62,6 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: artifacts
-
             - name: Create release package
         run: |
           mkdir -p dist

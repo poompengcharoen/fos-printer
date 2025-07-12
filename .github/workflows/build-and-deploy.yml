@@ -64,8 +64,30 @@ jobs:
             # Find macOS DMG file
             DMG_FILE=$(find . -name "*.dmg" -type f | head -1)
             if [ -n "$DMG_FILE" ]; then
-              zip -r ../${{ matrix.artifact-name }}.zip "$DMG_FILE"
-              echo "✅ Created ${{ matrix.artifact-name }}.zip with $DMG_FILE"
+              # Create README.md with installation instructions for macOS
+              cat > ../README.md << 'EOF'
+# Food Order Printer - macOS Installation
+
+## If you see "damaged" error when trying to open the app:
+
+1. Open Terminal (Applications > Utilities > Terminal)
+2. Navigate to where you extracted the DMG file
+3. Run this command:
+   ```bash
+   xattr -cr "Food Order Printer.app"
+   ```
+4. Now you can open the app normally
+
+## Why this happens:
+macOS Gatekeeper blocks unsigned apps for security. This is normal for open-source projects that aren't code-signed with an Apple Developer certificate.
+
+## Alternative method:
+Right-click the app and select "Open" from the context menu, then click "Open" in the security dialog.
+EOF
+              
+              # Create zip with both DMG and README
+              zip -r ../${{ matrix.artifact-name }}.zip "$DMG_FILE" ../README.md
+              echo "✅ Created ${{ matrix.artifact-name }}.zip with $DMG_FILE and README.md"
             else
               echo "❌ No DMG file found for macOS - build may have failed"
               exit 1

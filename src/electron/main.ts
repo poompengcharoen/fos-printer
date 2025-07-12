@@ -61,7 +61,10 @@ ipcMain.handle(
         /\/$/,
         ""
       )}\n`;
-      const envPath = path.join(process.cwd(), ".env.local");
+
+      // Use app's user data directory for writable location
+      const userDataPath = app.getPath("userData");
+      const envPath = path.join(userDataPath, ".env.local");
 
       fs.writeFileSync(envPath, envContent);
 
@@ -70,7 +73,11 @@ ipcMain.handle(
 
       printerProcess = spawn("node", [printerScript], {
         stdio: ["pipe", "pipe", "pipe"],
-        cwd: process.cwd(),
+        cwd: userDataPath, // Use the same directory for the process
+        env: {
+          ...process.env,
+          ENV_FILE_PATH: envPath, // Pass the env file path as environment variable
+        },
       });
 
       printerProcess.stdout.on("data", (data: Buffer) => {

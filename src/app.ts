@@ -6,8 +6,9 @@ import dotenv from "dotenv";
 import express from "express";
 import { setSocketInstance } from "./socket/socketInstance";
 
-// Load .env.local
-dotenv.config({ path: ".env.local" });
+// Load environment variables from custom path or default to .env.local
+const envPath = process.env.ENV_FILE_PATH || ".env.local";
+dotenv.config({ path: envPath });
 
 const app = express();
 const server = createServer(app);

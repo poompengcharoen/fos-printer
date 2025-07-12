@@ -1,0 +1,127 @@
+name: Build and Release Printer App
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest, windows-latest, ubuntu-latest]
+        include:
+          - os: macos-latest
+            platform: mac
+            extension: .dmg
+          - os: windows-latest
+            platform: win
+            extension: .exe
+          - os: ubuntu-latest
+            platform: linux
+            extension: .AppImage
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "yarn"
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Build application
+        run: yarn build
+
+      - name: Build executable
+        run: yarn dist --${{ matrix.platform }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: fos-printer-${{ matrix.platform }}
+          path: release/
+          retention-days: 30
+
+  package:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+            - name: Create release package
+        run: |
+          mkdir -p dist
+          cd artifacts
+          
+          # Create a zip file containing all platform executables
+          zip -r ../dist/fos-printer-app.zip . -x "*.zip"
+          
+          # Create individual platform packages
+          for platform in fos-printer-*; do
+            if [ -d "$platform" ]; then
+              cd "$platform"
+              zip -r "../../dist/fos-printer-${platform#fos-printer-}.zip" .
+              cd ..
+            fi
+          done
+          
+          cd ..
+          
+          # Copy HTML page and create version info
+          cp ../docs/index.html dist/
+          
+          # Create version.json with current tag
+          echo '{"version": "'${GITHUB_REF#refs/tags/}'", "buildDate": "'$(date -u +"%Y-%m-%dT%H:%M:%SZ")'"}' > dist/version.json
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload to Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            dist/fos-printer-app.zip
+            dist/fos-printer-mac.zip
+            dist/fos-printer-win.zip
+            dist/fos-printer-linux.zip
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  deploy-pages:
+    needs: package
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

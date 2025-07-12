@@ -61,6 +61,7 @@
       "node_modules/**/*",
       "package.json"
     ],
+    "publish": null,
     "mac": {
       "category": "public.app-category.business",
       "target": "dmg"
@@ -69,7 +70,8 @@
       "target": "nsis"
     },
     "linux": {
-      "target": "AppImage"
+      "target": "AppImage",
+      "category": "Utility"
     }
   }
 }

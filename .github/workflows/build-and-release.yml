@@ -46,6 +46,8 @@ jobs:
 
       - name: Build executable
         run: "yarn dist --${{ matrix.platform }}"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4

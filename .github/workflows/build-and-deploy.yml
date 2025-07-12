@@ -77,7 +77,7 @@ jobs:
               echo "   - Or go to Applications > Utilities > Terminal" >> README.md
               echo "" >> README.md
               echo "2. **Navigate to your Downloads folder:**" >> README.md
-              echo "   - In the Terminal window, type: \`cd Downloads\`" >> README.md
+              echo "   - In the Terminal window, type: \`cd Downloads/FOS\\ Printer\\ App/fos-printer-mac\`" >> README.md
               echo "   - Press Enter" >> README.md
               echo "" >> README.md
               echo "3. **Run the security command:**" >> README.md

@@ -1,13 +1,12 @@
-import * as fs from "fs";
 import * as path from "path";
 
 import { BrowserWindow, IpcMainInvokeEvent, app, ipcMain } from "electron";
 
 import { PrinterService } from "../services/printerService";
-import { spawn } from "child_process";
+import PrinterSocketClient from "../socket/printerClient";
 
 let mainWindow: BrowserWindow | null = null;
-let printerProcess: any = null;
+let printerClient: PrinterSocketClient | null = null;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -56,57 +55,35 @@ ipcMain.handle(
     backendUrl: string
   ) => {
     try {
-      // Create .env.local file with the provided configuration
-      const envContent = `RESTAURANT_ID=${restaurantId}\nBACKEND_URL=${backendUrl.replace(
-        /\/$/,
-        ""
-      )}\n`;
+      // Set environment variables directly
+      process.env.RESTAURANT_ID = restaurantId;
+      process.env.BACKEND_URL = backendUrl.replace(/\/$/, "");
 
-      // Use app's user data directory for writable location
-      const userDataPath = app.getPath("userData");
-      const envPath = path.join(userDataPath, ".env.local");
+      // Create printer client and connect
+      printerClient = new PrinterSocketClient();
 
-      fs.writeFileSync(envPath, envContent);
+      // Override console.log to send output to renderer
+      const originalLog = console.log;
+      const originalError = console.error;
 
-      // Start the printer process
-      const printerScript = path.join(__dirname, "../app.js");
-
-      printerProcess = spawn("node", [printerScript], {
-        stdio: ["pipe", "pipe", "pipe"],
-        cwd: userDataPath, // Use the same directory for the process
-        env: {
-          ...process.env,
-          ENV_FILE_PATH: envPath, // Pass the env file path as environment variable
-        },
-      });
-
-      printerProcess.stdout.on("data", (data: Buffer) => {
-        const output = data.toString();
-        console.log("Printer output:", output);
-
-        // Send output to renderer
+      console.log = (...args: any[]) => {
+        const output = args.join(" ");
+        originalLog(...args);
         if (mainWindow) {
-          mainWindow.webContents.send("printer-output", output);
+          mainWindow.webContents.send("printer-output", output + "\n");
         }
-      });
+      };
 
-      printerProcess.stderr.on("data", (data: Buffer) => {
-        const error = data.toString();
-        console.error("Printer error:", error);
-
-        // Send error to renderer
+      console.error = (...args: any[]) => {
+        const output = args.join(" ");
+        originalError(...args);
         if (mainWindow) {
-          mainWindow.webContents.send("printer-error", error);
+          mainWindow.webContents.send("printer-error", output + "\n");
         }
-      });
+      };
 
-      printerProcess.on("close", (code: number) => {
-        console.log("Printer process closed with code:", code);
-
-        if (mainWindow) {
-          mainWindow.webContents.send("printer-closed", code);
-        }
-      });
+      // Connect to backend
+      printerClient.connect();
 
       return { success: true, message: "Printer started successfully" };
     } catch (error) {
@@ -118,9 +95,9 @@ ipcMain.handle(
 
 ipcMain.handle("stop-printer", async (event: IpcMainInvokeEvent) => {
   try {
-    if (printerProcess) {
-      printerProcess.kill();
-      printerProcess = null;
+    if (printerClient) {
+      printerClient.disconnect();
+      printerClient = null;
       return { success: true, message: "Printer stopped successfully" };
     }
     return { success: true, message: "No printer process running" };

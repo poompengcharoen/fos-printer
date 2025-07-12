@@ -65,25 +65,23 @@ jobs:
             DMG_FILE=$(find . -name "*.dmg" -type f | head -1)
             if [ -n "$DMG_FILE" ]; then
               # Create README.md with installation instructions for macOS
-              cat > ../README.md << 'EOF'
-# Food Order Printer - macOS Installation
-
-## If you see "damaged" error when trying to open the app:
-
-1. Open Terminal (Applications > Utilities > Terminal)
-2. Navigate to where you extracted the DMG file
-3. Run this command:
-   ```bash
-   xattr -cr "Food Order Printer.app"
-   ```
-4. Now you can open the app normally
-
-## Why this happens:
-macOS Gatekeeper blocks unsigned apps for security. This is normal for open-source projects that aren't code-signed with an Apple Developer certificate.
-
-## Alternative method:
-Right-click the app and select "Open" from the context menu, then click "Open" in the security dialog.
-EOF
+              echo "# Food Order Printer - macOS Installation" > ../README.md
+              echo "" >> ../README.md
+              echo "## If you see \"damaged\" error when trying to open the app:" >> ../README.md
+              echo "" >> ../README.md
+              echo "1. Open Terminal (Applications > Utilities > Terminal)" >> ../README.md
+              echo "2. Navigate to where you extracted the DMG file" >> ../README.md
+              echo "3. Run this command:" >> ../README.md
+              echo "   \`\`\`bash" >> ../README.md
+              echo "   xattr -cr \"Food Order Printer.app\"" >> ../README.md
+              echo "   \`\`\`" >> ../README.md
+              echo "4. Now you can open the app normally" >> ../README.md
+              echo "" >> ../README.md
+              echo "## Why this happens:" >> ../README.md
+              echo "macOS Gatekeeper blocks unsigned apps for security. This is normal for open-source projects that aren't code-signed with an Apple Developer certificate." >> ../README.md
+              echo "" >> ../README.md
+              echo "## Alternative method:" >> ../README.md
+              echo "Right-click the app and select \"Open\" from the context menu, then click \"Open\" in the security dialog." >> ../README.md
               
               # Create zip with both DMG and README
               zip -r ../${{ matrix.artifact-name }}.zip "$DMG_FILE" ../README.md

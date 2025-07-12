@@ -98,6 +98,9 @@ jobs:
           # Copy HTML page and create version info for GitHub Pages
           cp docs/index.html pages/
 
+          # Copy distribution files to pages directory for GitHub Pages
+          cp dist/*.zip pages/
+
           # Create version.json with commit SHA
           VERSION="dev-${GITHUB_SHA::8}"
           echo '{"version": "'$VERSION'", "buildDate": "'$(date -u +"%Y-%m-%dT%H:%M:%SZ")'"}' > pages/version.json

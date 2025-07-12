@@ -50,3 +50,7 @@ Thumbs.db
 # Build scripts and configs
 bundle.js
 env.example
+
+# Generated zip files
+*.zip
+version.json

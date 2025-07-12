@@ -7,15 +7,14 @@
     "dev": "nodemon src/app.ts",
     "build": "tsc && yarn copy-files",
     "start": "node dist/app.js",
-    "bundle": "node bundle.js",
-    "sea:prepare": "yarn build && yarn bundle",
-    "sea:create": "yarn sea:prepare && node --experimental-sea-config sea-config.json",
     "electron:dev": "concurrently \"yarn build:watch\" \"wait-on dist/app.js && electron .\"",
     "electron:build": "yarn build && electron-builder",
+    "electron:build:all": "yarn build && electron-builder -mwl",
+    "electron:build:linux": "yarn build && electron-builder -l",
+    "create-zips:linux": "./scripts/create-zips.sh linux",
     "build:watch": "tsc --watch",
-    "pack": "yarn build && electron-builder --dir",
-    "dist": "yarn build && electron-builder",
-    "copy-files": "cp -r src/renderer dist/ && cp -r src/assets dist/ 2>/dev/null || true"
+    "copy-files": "cp -r src/renderer dist/ && cp -r src/assets dist/ 2>/dev/null || true",
+    "create-zips": "./scripts/create-zips.sh"
   },
   "dependencies": {
     "@node-escpos/core": "^0.6.0",

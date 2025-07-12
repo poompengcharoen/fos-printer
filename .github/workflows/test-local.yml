@@ -1,0 +1,50 @@
+name: Test Local Build
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  test-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Install yarn
+        run: npm install -g yarn
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Build Electron app (Linux only)
+        run: yarn electron:build:linux
+
+      - name: Create zip files (Linux only)
+        run: yarn create-zips:linux
+
+      - name: Create version.json
+        run: |
+          echo '{
+            "version": "test-local",
+            "buildDate": "'$(date -u +"%Y-%m-%dT%H:%M:%SZ")'",
+            "commit": "local-test"
+          }' > version.json
+
+      - name: Copy files to docs
+        run: |
+          cp fos-printer-*.zip docs/ 2>/dev/null || echo "No zip files to copy"
+          cp version.json docs/
+
+      - name: List created files
+        run: |
+          echo "Files in current directory:"
+          ls -la fos-printer-*.zip version.json 2>/dev/null || echo "No files found"
+          echo "Files in docs directory:"
+          ls -la docs/ 2>/dev/null || echo "No files in docs"

@@ -124,14 +124,14 @@ jobs:
           # We'll use the artifacts from the matrix builds
           # This step just ensures we have the right environment for creating zips
 
-            - name: Create final zip files
+      - name: Create final zip files
         run: |
           # Extract artifacts from matrix builds
           find artifacts -name "*.zip" -exec unzip -o {} \;
-          
+
           echo "Files after extraction:"
           ls -la
-          
+
           # Create platform-specific zip files from extracted artifacts with flexible matching
           DMG_FILE=$(find . -name "*.dmg" -type f | head -1)
           if [ -n "$DMG_FILE" ]; then
@@ -140,7 +140,7 @@ jobs:
           else
             echo "⚠️  No DMG file found for macOS"
           fi
-          
+
           EXE_FILE=$(find . -name "*.exe" -type f | head -1)
           if [ -n "$EXE_FILE" ]; then
             zip -r fos-printer-win.zip "$EXE_FILE"
@@ -148,7 +148,7 @@ jobs:
           else
             echo "⚠️  No EXE file found for Windows"
           fi
-          
+
           APPIMAGE_FILE=$(find . -name "*.AppImage" -type f | head -1)
           if [ -n "$APPIMAGE_FILE" ]; then
             zip -r fos-printer-linux.zip "$APPIMAGE_FILE"

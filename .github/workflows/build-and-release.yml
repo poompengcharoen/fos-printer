@@ -62,14 +62,14 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: artifacts
-            - name: Create release package
+      - name: Create release package
         run: |
           mkdir -p dist
           cd artifacts
-          
+
           # Create a zip file containing all platform executables
           zip -r ../dist/fos-printer-app.zip . -x "*.zip"
-          
+
           # Create individual platform packages
           for platform in fos-printer-*; do
             if [ -d "$platform" ]; then
@@ -78,12 +78,12 @@ jobs:
               cd ..
             fi
           done
-          
+
           cd ..
-          
+
           # Copy HTML page and create version info
           cp ../docs/index.html dist/
-          
+
           # Create version.json with current tag
           echo '{"version": "'${GITHUB_REF#refs/tags/}'", "buildDate": "'$(date -u +"%Y-%m-%dT%H:%M:%SZ")'"}' > dist/version.json
 

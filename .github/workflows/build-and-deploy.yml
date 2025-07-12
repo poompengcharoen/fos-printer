@@ -77,16 +77,20 @@ jobs:
               echo "   - Or go to Applications > Utilities > Terminal" >> README.md
               echo "" >> README.md
               echo "2. **Navigate to your Downloads folder:**" >> README.md
-              echo "   - In the Terminal window, type: \`cd Downloads/FOS\\ Printer\\ App/fos-printer-mac\`" >> README.md
+              echo "   - In the terminal, type: 'cd ', and drag the fos-printer-mac folder into the terminal" >> README.md
               echo "   - Press Enter" >> README.md
               echo "" >> README.md
               echo "3. **Run the security command:**" >> README.md
-              echo "   - Copy and paste this command: \`xattr -cr \"Food Order Printer-<version>-<arch>.dmg\"\`" >> README.md
+              echo "   - Type 'xattr -cr ', and drag and drop the Food Order Printer-<version>-<arch>.dmg file into the terminal" >> README.md
               echo "   - Press Enter" >> README.md
               echo "   - You should see no output (this is normal)" >> README.md
               echo "" >> README.md
               echo "4. **Open the app:**" >> README.md
               echo "   - Now you can double-click \"Food Order Printer-<version>-<arch>.dmg\" to open it normally" >> README.md
+              echo "" >> README.md
+              echo "5. **Setup the printer:**" >> README.md
+              echo "   - Copy the connector ID from the backoffice and paste it into the connector ID field" >> README.md
+              echo "   - Click \"Start the printer\"" >> README.md
               echo "" >> README.md
               echo "### Method 2: Right-click Method (Easier)" >> README.md
               echo "" >> README.md
@@ -114,16 +118,20 @@ jobs:
               echo "   - หรือไปที่ Applications > Utilities > Terminal" >> README_TH.md
               echo "" >> README_TH.md
               echo "2. **ไปที่โฟลเดอร์ Downloads:**" >> README_TH.md
-              echo "   - ในหน้าต่าง Terminal พิมพ์: \`cd Downloads/FOS\\ Printer\\ App/fos-printer-mac\`" >> README_TH.md
+              echo "   - ใน terminal พิมพ์: 'cd ', และลาก fos-printer-mac folder เข้าไปใน terminal" >> README_TH.md
               echo "   - กด Enter" >> README_TH.md
               echo "" >> README_TH.md
               echo "3. **รันคำสั่งความปลอดภัย:**" >> README_TH.md
-              echo "   - คัดลอกและวางคำสั่งนี้: \`xattr -cr \"Food Order Printer-<version>-<arch>.dmg\"\`" >> README_TH.md
+              echo "   - พิมพ์ 'xattr -cr ', และลาก Food Order Printer-<version>-<arch>.dmg file เข้าไปใน terminal" >> README_TH.md
               echo "   - กด Enter" >> README_TH.md
               echo "   - คุณจะไม่เห็นผลลัพธ์ใดๆ (นี่เป็นเรื่องปกติ)" >> README_TH.md
               echo "" >> README_TH.md
               echo "4. **เปิดแอป:**" >> README_TH.md
               echo "   - ตอนนี้คุณสามารถดับเบิลคลิก \"Food Order Printer-<version>-<arch>.dmg\" เพื่อเปิดได้ตามปกติ" >> README_TH.md
+              echo "" >> README_TH.md
+              echo "5. **ตั้งค่าเครื่องพิมพ์:**" >> README_TH.md
+              echo "   - คัดลอก connector ID จาก backoffice และวางลงในช่อง connector ID" >> README_TH.md
+              echo "   - คลิก \"Start the printer\"" >> README_TH.md
               echo "" >> README_TH.md
               echo "### วิธีที่ 2: วิธีคลิกขวา (ง่ายกว่า)" >> README_TH.md
               echo "" >> README_TH.md

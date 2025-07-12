@@ -55,6 +55,7 @@ export class PrinterService {
       try {
         // Test if the current device is still accessible
         await this.testDeviceConnection(this.device);
+        console.log("🖨️ Using existing device connection");
         return this.device;
       } catch (error) {
         console.log("🖨️ Current device is no longer valid, resetting...");
@@ -77,6 +78,11 @@ export class PrinterService {
       return this.device;
     } catch (error) {
       console.error("🖨️ Failed to initialize USB printer device:", error);
+      console.error("🖨️ This could mean:");
+      console.error("🖨️ - The printer is not connected or powered off");
+      console.error("🖨️ - The USB cable is faulty");
+      console.error("🖨️ - The printer is being used by another application");
+      console.error("🖨️ - USB permissions are not granted");
       this.resetDeviceState();
       throw new Error(`Failed to initialize USB printer device: ${error}`);
     }
@@ -108,22 +114,30 @@ export class PrinterService {
 
   async isPrinterAvailable(): Promise<boolean> {
     try {
+      console.log("🖨️ Checking USB printer availability...");
+      
       // Always test the actual connection, don't rely on cached device
       const device = new USB();
 
       // Test if we can actually open the device
       return new Promise((resolve) => {
         const timeout = setTimeout(() => {
-          console.log("🖨️ USB device check timeout");
+          console.log("🖨️ USB device check timeout - no response from device");
           resolve(false);
-        }, 2000); // 2 second timeout
+        }, 3000); // 3 second timeout
 
         device.open((err: Error | null) => {
           clearTimeout(timeout);
           if (err) {
-            console.log("🖨️ USB device not available:", err.message);
+            console.log("🖨️ USB device not available - Error:", err.message);
+            console.log("🖨️ Common solutions:");
+            console.log("🖨️ 1. Check if printer is powered on and connected via USB");
+            console.log("🖨️ 2. Try reconnecting the USB cable");
+            console.log("🖨️ 3. Check if another application is using the printer");
+            console.log("🖨️ 4. On macOS: System Preferences > Security & Privacy > Privacy > Accessibility");
             resolve(false);
           } else {
+            console.log("🖨️ USB printer detected and available!");
             // Close the test connection immediately
             try {
               device.close();
@@ -135,7 +149,7 @@ export class PrinterService {
         });
       });
     } catch (error) {
-      // console.log("🖨️ Printer not available:", error);
+      console.log("🖨️ Printer availability check failed:", error);
       return false;
     }
   }

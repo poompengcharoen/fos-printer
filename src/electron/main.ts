@@ -11,7 +11,7 @@ let printerClient: PrinterSocketClient | null = null;
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 800,
-    height: 600,
+    height: 1000,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
@@ -82,8 +82,25 @@ ipcMain.handle(
         }
       };
 
-      // Connect to backend
+      // Connect to backend and join printer room
       printerClient.connect();
+      printerClient.joinPrinter(restaurantId);
+
+      // Listen for printer status updates from the client
+      printerClient.on("printerStatus", (statusData) => {
+        console.log("🖨️ Received printer status update:", statusData);
+        if (mainWindow) {
+          mainWindow.webContents.send("printer-status-update", statusData);
+        }
+      });
+
+      // Listen for print operation results
+      printerClient.on("printResult", (resultData) => {
+        console.log("🖨️ Received print result:", resultData);
+        if (mainWindow) {
+          mainWindow.webContents.send("print-result", resultData);
+        }
+      });
 
       return { success: true, message: "Printer started successfully" };
     } catch (error) {
@@ -96,8 +113,20 @@ ipcMain.handle(
 ipcMain.handle("stop-printer", async (event: IpcMainInvokeEvent) => {
   try {
     if (printerClient) {
+      // Remove all event listeners before disconnecting
+      printerClient.removeAllListeners();
       printerClient.disconnect();
       printerClient = null;
+      
+      // Notify renderer that printer has stopped
+      if (mainWindow) {
+        mainWindow.webContents.send("printer-status-update", {
+          available: false,
+          timestamp: new Date().toISOString(),
+          message: "Printer stopped"
+        });
+      }
+      
       return { success: true, message: "Printer stopped successfully" };
     }
     return { success: true, message: "No printer process running" };

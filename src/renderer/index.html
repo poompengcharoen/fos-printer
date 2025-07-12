@@ -214,22 +214,11 @@
 
       <form id="printerForm">
         <div class="form-group">
-          <label for="restaurantId">Restaurant ID</label>
+          <label for="connectionId">Connection ID</label>
           <input
             type="text"
-            id="restaurantId"
-            placeholder="Enter your restaurant ID"
-            required
-          />
-        </div>
-
-        <div class="form-group">
-          <label for="backendUrl">Backend URL</label>
-          <input
-            type="text"
-            id="backendUrl"
-            placeholder="https://backend.domain.com"
-            value="https://backend.domain.com"
+            id="connectionId"
+            placeholder="Enter the connection ID"
             required
           />
         </div>
@@ -241,7 +230,7 @@
           <button type="button" id="stopBtn" class="btn-stop" disabled>
             Stop Printer
           </button>
-          <button type="button" id="checkBtn" class="btn-check">
+          <button type="button" id="checkBtn" class="btn-check" style="display: none;">
             Check Connection
           </button>
         </div>
@@ -285,8 +274,7 @@
       const startBtn = document.getElementById("startBtn");
       const stopBtn = document.getElementById("stopBtn");
       const checkBtn = document.getElementById("checkBtn");
-      const restaurantIdInput = document.getElementById("restaurantId");
-      const backendUrlInput = document.getElementById("backendUrl");
+      const connectionIdInput = document.getElementById("connectionId");
       const statusDiv = document.getElementById("status");
       const logContainer = document.getElementById("logContainer");
       const serverStatusIndicator = document.getElementById(
@@ -345,8 +333,10 @@
 
       // Start printer
       startBtn.addEventListener("click", async () => {
-        const restaurantId = restaurantIdInput.value.trim();
-        const backendUrl = backendUrlInput.value.trim();
+        const connectionId = connectionIdInput.value.trim();
+        const splitConnectionId = connectionId.split("|");
+        const restaurantId = splitConnectionId[0].trim();
+        const backendUrl = splitConnectionId[1].trim();
 
         if (!restaurantId) {
           showStatus("Please enter a Restaurant ID", "error");

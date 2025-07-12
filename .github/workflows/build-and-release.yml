@@ -78,6 +78,7 @@ jobs:
       - name: Create release package
         run: |
           mkdir -p dist
+          mkdir -p pages
           cd artifacts
 
           # Create a zip file containing all platform executables
@@ -94,8 +95,8 @@ jobs:
 
           cd ..
 
-          # Copy HTML page and create version info
-          cp docs/index.html dist/
+          # Copy HTML page and create version info for GitHub Pages
+          cp docs/index.html pages/
 
           # Create version.json with current tag or commit SHA
           if [[ $GITHUB_REF == refs/tags/* ]]; then
@@ -103,7 +104,7 @@ jobs:
           else
             VERSION="dev-${GITHUB_SHA::8}"
           fi
-          echo '{"version": "'$VERSION'", "buildDate": "'$(date -u +"%Y-%m-%dT%H:%M:%SZ")'"}' > dist/version.json
+          echo '{"version": "'$VERSION'", "buildDate": "'$(date -u +"%Y-%m-%dT%H:%M:%SZ")'"}' > pages/version.json
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
@@ -111,7 +112,7 @@ jobs:
       - name: Upload to Pages
         uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          path: pages
 
       - name: Deploy to GitHub Pages
         id: deployment

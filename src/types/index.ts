@@ -20,7 +20,7 @@ export interface OwnerAttributes extends Attributes {
   name: string;
   email: string;
   passwordHash: string;
-  tier: "basic" | "pro" | "unlimited";
+  tier: "free" | "pro" | "business";
 }
 
 export interface RestaurantAttributes extends Attributes {

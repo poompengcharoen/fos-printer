@@ -64,27 +64,27 @@ jobs:
             # Find macOS DMG file
             DMG_FILE=$(find . -name "*.dmg" -type f | head -1)
             if [ -n "$DMG_FILE" ]; then
-              # Create README.md with installation instructions for macOS
-              echo "# Food Order Printer - macOS Installation" > ../README.md
-              echo "" >> ../README.md
-              echo "## If you see \"damaged\" error when trying to open the app:" >> ../README.md
-              echo "" >> ../README.md
-              echo "1. Open Terminal (Applications > Utilities > Terminal)" >> ../README.md
-              echo "2. Navigate to where you extracted the DMG file" >> ../README.md
-              echo "3. Run this command:" >> ../README.md
-              echo "   \`\`\`bash" >> ../README.md
-              echo "   xattr -cr \"Food Order Printer.app\"" >> ../README.md
-              echo "   \`\`\`" >> ../README.md
-              echo "4. Now you can open the app normally" >> ../README.md
-              echo "" >> ../README.md
-              echo "## Why this happens:" >> ../README.md
-              echo "macOS Gatekeeper blocks unsigned apps for security. This is normal for open-source projects that aren't code-signed with an Apple Developer certificate." >> ../README.md
-              echo "" >> ../README.md
-              echo "## Alternative method:" >> ../README.md
-              echo "Right-click the app and select \"Open\" from the context menu, then click \"Open\" in the security dialog." >> ../README.md
+              # Create README.md in release directory
+              echo "# Food Order Printer - macOS Installation" > README.md
+              echo "" >> README.md
+              echo "## If you see \"damaged\" error when trying to open the app:" >> README.md
+              echo "" >> README.md
+              echo "1. Open Terminal (Applications > Utilities > Terminal)" >> README.md
+              echo "2. Navigate to where you extracted the DMG file" >> README.md
+              echo "3. Run this command:" >> README.md
+              echo "   \`\`\`bash" >> README.md
+              echo "   xattr -cr \"Food Order Printer.app\"" >> README.md
+              echo "   \`\`\`" >> README.md
+              echo "4. Now you can open the app normally" >> README.md
+              echo "" >> README.md
+              echo "## Why this happens:" >> README.md
+              echo "macOS Gatekeeper blocks unsigned apps for security. This is normal for open-source projects that aren't code-signed with an Apple Developer certificate." >> README.md
+              echo "" >> README.md
+              echo "## Alternative method:" >> README.md
+              echo "Right-click the app and select \"Open\" from the context menu, then click \"Open\" in the security dialog." >> README.md
               
               # Create zip with both DMG and README
-              zip -r ../${{ matrix.artifact-name }}.zip "$DMG_FILE" ../README.md
+              zip -r "../${{ matrix.artifact-name }}.zip" "$DMG_FILE" README.md
               echo "✅ Created ${{ matrix.artifact-name }}.zip with $DMG_FILE and README.md"
             else
               echo "❌ No DMG file found for macOS - build may have failed"

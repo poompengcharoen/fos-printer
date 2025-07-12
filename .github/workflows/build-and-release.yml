@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch: null
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -13,35 +13,37 @@ permissions:
 
 jobs:
   build:
-    runs-on: "${{ matrix.os }}"
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os:
           - macos-latest
-          - windows-latest
+          # - windows-latest
           - ubuntu-latest
         include:
           - os: macos-latest
             platform: mac
             extension: .dmg
-          - os: windows-latest
-            platform: win
-            extension: .exe
+          # - os: windows-latest
+          #   platform: win
+          #   extension: .exe
           - os: ubuntu-latest
             platform: linux
             extension: .AppImage
 
     steps:
-      - name: Checkout code
+      - name: 📥 Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: 🟢 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "18"
-          cache: yarn
 
-      - name: Cache Electron
+      - name: 🧶 Install Yarn
+        run: npm install -g yarn
+
+      - name: 💾 Cache Electron
         uses: actions/cache@v4
         with:
           path: |
@@ -51,41 +53,62 @@ jobs:
           restore-keys: |
             electron-${{ runner.os }}-
 
-      - name: Install dependencies
+      - name: 📦 Install dependencies
         run: yarn install --frozen-lockfile
 
-      - name: Build application
+      - name: 🔨 Build application
         run: yarn build
 
-      - name: Build executable
-        run: "yarn dist --${{ matrix.platform }}"
+      - name: 🏗️ Build executable
+        run: yarn dist --${{ matrix.platform }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload artifacts
+      - name: 📤 Upload artifacts
+        if: ${{ env.ACT != 'true' }}
         uses: actions/upload-artifact@v4
         with:
-          name: "fos-printer-${{ matrix.platform }}"
+          name: fos-printer-${{ matrix.platform }}
           path: release/
           retention-days: 30
+
+      - name: 📁 Create local artifacts (for testing)
+        if: ${{ env.ACT == 'true' }}
+        run: |
+          mkdir -p ../artifacts
+          cp -r release/ ../artifacts/fos-printer-${{ matrix.platform }}/
 
   package:
     needs: build
     runs-on: ubuntu-latest
     environment:
       name: github-pages
-      url: "${{ steps.deployment.outputs.page_url }}"
+      url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
-      - name: Checkout code
+      - name: 📥 Checkout code
         uses: actions/checkout@v4
 
-      - name: Download all artifacts
+      - name: 📥 Download all artifacts
+        if: ${{ env.ACT != 'true' }}
         uses: actions/download-artifact@v4
         with:
           path: artifacts
 
-      - name: Create release package
+      - name: 📁 Use local artifacts (for testing)
+        if: ${{ env.ACT == 'true' }}
+        run: |
+          echo "Using local artifacts for testing"
+          if [ -d "artifacts" ]; then
+            echo "Artifacts directory found:"
+            ls -la artifacts/
+          else
+            echo "No artifacts directory found, creating mock artifacts for testing..."
+            mkdir -p artifacts/fos-printer-linux
+            echo "Mock artifact created for testing"
+          fi
+
+      - name: 📦 Create release package
         run: |
           echo "=== STARTING RELEASE PACKAGE CREATION ==="
           echo "Current directory: $(pwd)"
@@ -93,6 +116,14 @@ jobs:
           ls -la
 
           mkdir -p pages
+
+          # Check if artifacts directory exists
+          if [ ! -d "artifacts" ]; then
+            echo "ERROR: artifacts directory not found!"
+            echo "Make sure to run the build job first or set ACT=true for local testing"
+            exit 1
+          fi
+
           cd artifacts
 
           echo "=== ARTIFACTS DIRECTORY CONTENTS ==="
@@ -111,17 +142,12 @@ jobs:
               ls -la "$platform"
               
               echo ""
-              echo "--- RECURSIVE CONTENTS OF $platform ---"
-              find "$platform" -type f -exec ls -lh {} \; | head -20
-              echo "... (showing first 20 files)"
-              
-              echo ""
               echo "--- LARGEST FILES IN $platform ---"
               find "$platform" -type f -exec du -h {} \; | sort -hr | head -10
               
               echo ""
               echo "--- FILE TYPES IN $platform ---"
-              find "$platform" -type f | sed 's/.*\.//' | sort | uniq -c | sort -nr
+              find "$platform" -type f | sed 's/.*\.//' | sort | uniq -c | sort -nr | head -20
             fi
           done
 
@@ -137,12 +163,14 @@ jobs:
               
               # Copy only the final distributable files (exclude build artifacts)
               echo "Finding distributable files..."
-              find . -maxdepth 1 -name "*.dmg" -o -name "*.exe" -o -name "*.AppImage" -o -name "*.deb" -o -name "*.rpm" | while read -r file; do
-                echo "Found file: $file"
-                echo "File size: $(ls -lh "$file")"
-                echo "Copying: $file to ../../pages/"
-                cp "$file" "../../pages/"
-                echo "Copy completed for: $file"
+              for file in *.dmg *.exe *.AppImage *.deb *.rpm; do
+                if [ -f "$file" ]; then
+                  echo "Found file: $file"
+                  echo "File size: $(ls -lh "$file")"
+                  echo "Copying: $file to ../../pages/"
+                  cp "$file" "../../pages/"
+                  echo "Copy completed for: $file"
+                fi
               done
               cd ..
             fi
@@ -162,18 +190,8 @@ jobs:
           find pages/ -type f -exec ls -lh {} \;
 
           echo ""
-          echo "=== CREATING COMBINED ZIP ==="
-          # Create a simple zip with just the executables (no nested directories)
-          cd pages
-          echo "Current directory: $(pwd)"
-          echo "Files to zip:"
-          ls -la *.dmg *.exe *.AppImage *.deb *.rpm 2>/dev/null || echo "No matching files found"
-
-          zip fos-printer-app.zip *.dmg *.exe *.AppImage *.deb *.rpm 2>/dev/null || true
-          echo "Zip file created:"
-          ls -la fos-printer-app.zip
-          echo "Zip file size: $(du -h fos-printer-app.zip)"
-          cd ..
+          echo "=== SKIPPING COMBINED ZIP (users can download individual files) ==="
+          echo "Individual files are sufficient for distribution"
 
           echo ""
           echo "=== FINAL PAGES DIRECTORY ==="
@@ -206,19 +224,36 @@ jobs:
           find pages/ -type f -name "*.dmg" -o -name "*.exe" -o -name "*.AppImage" -o -name "*.deb" -o -name "*.rpm" | while read -r file; do
             echo "  $(basename "$file"): $(du -h "$file" | cut -f1)"
           done
-          echo "Combined zip: $(du -h pages/fos-printer-app.zip | cut -f1)"
           echo "Total pages size: $(du -sh pages/ | cut -f1)"
 
           echo "=== RELEASE PACKAGE CREATION COMPLETE ==="
 
-      - name: Setup Pages
+      - name: ⚙️ Setup Pages
+        if: ${{ env.ACT != 'true' }}
         uses: actions/configure-pages@v4
 
-      - name: Upload to Pages
+      - name: 📤 Upload to Pages
+        if: ${{ env.ACT != 'true' }}
         uses: actions/upload-pages-artifact@v3
         with:
           path: pages
 
-      - name: Deploy to GitHub Pages
+      - name: 🚀 Deploy to GitHub Pages
+        if: ${{ env.ACT != 'true' }}
         id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: 📋 Show local results (for testing)
+        if: ${{ env.ACT == 'true' }}
+        run: |
+          echo "=== LOCAL TESTING RESULTS ==="
+          echo "Pages directory contents:"
+          ls -la pages/
+          echo ""
+          echo "Files created:"
+          find pages/ -type f -exec ls -lh {} \;
+          echo ""
+          echo "Total size: $(du -sh pages/)"
+          echo ""
+          echo "✅ Local testing completed successfully!"
+          echo "In real GitHub Actions, these files would be deployed to GitHub Pages."

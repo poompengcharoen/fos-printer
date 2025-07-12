@@ -87,23 +87,16 @@ jobs:
 
       - name: Create release package
         run: |
-          mkdir -p dist
           mkdir -p pages
           cd artifacts
 
-          # Create a zip file containing only the final executables
-          # Find and include only the actual distributable files (handle spaces in filenames)
-          find . -name "*.dmg" -o -name "*.exe" -o -name "*.AppImage" -o -name "*.deb" -o -name "*.rpm" | while read -r file; do
-            zip ../dist/fos-printer-app.zip "$file"
-          done
-
-          # Create individual platform packages with better filtering
+          # Copy individual platform files directly (no zipping of DMG/AppImage)
           for platform in fos-printer-*; do
             if [ -d "$platform" ]; then
               cd "$platform"
-              # Only include the actual app files, exclude build artifacts (handle spaces in filenames)
-              find . -type f \( -name "*.dmg" -o -name "*.exe" -o -name "*.AppImage" -o -name "*.deb" -o -name "*.rpm" -o -name "*.zip" \) | while read -r file; do
-                zip "../../dist/fos-printer-${platform#fos-printer-}.zip" "$file"
+              # Copy only the final distributable files (exclude build artifacts)
+              find . -maxdepth 1 -name "*.dmg" -o -name "*.exe" -o -name "*.AppImage" -o -name "*.deb" -o -name "*.rpm" | while read -r file; do
+                cp "$file" "../../pages/"
               done
               cd ..
             fi
@@ -111,11 +104,13 @@ jobs:
 
           cd ..
 
+          # Create a simple zip with just the executables (no nested directories)
+          cd pages
+          zip fos-printer-app.zip *.dmg *.exe *.AppImage *.deb *.rpm 2>/dev/null || true
+          cd ..
+
           # Copy HTML page and create version info for GitHub Pages
           cp docs/index.html pages/
-
-          # Copy distribution files to pages directory for GitHub Pages
-          cp dist/*.zip pages/
 
           # Create version.json with commit SHA
           VERSION="dev-${GITHUB_SHA::8}"

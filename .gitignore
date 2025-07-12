@@ -16,6 +16,7 @@
 /fos-printer-new
 /sea-prep.blob
 /dist-electron
+/release
 
 # environment variables
 .env

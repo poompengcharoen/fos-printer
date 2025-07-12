@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Food Order Printer</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+
+      .container {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        padding: 40px;
+        width: 100%;
+        max-width: 500px;
+      }
+
+      .header {
+        text-align: center;
+        margin-bottom: 30px;
+      }
+
+      .header h1 {
+        color: #333;
+        font-size: 28px;
+        margin-bottom: 10px;
+      }
+
+      .header p {
+        color: #666;
+        font-size: 16px;
+      }
+
+      .form-group {
+        margin-bottom: 20px;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 8px;
+        color: #333;
+        font-weight: 600;
+        font-size: 14px;
+      }
+
+      input[type="text"] {
+        width: 100%;
+        padding: 12px 16px;
+        border: 2px solid #e1e5e9;
+        border-radius: 10px;
+        font-size: 16px;
+        transition: border-color 0.3s ease;
+      }
+
+      input[type="text"]:focus {
+        outline: none;
+        border-color: #667eea;
+      }
+
+      .button-group {
+        display: flex;
+        gap: 15px;
+        margin-top: 30px;
+      }
+
+      button {
+        flex: 1;
+        padding: 14px 20px;
+        border: none;
+        border-radius: 10px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .btn-start {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+      }
+
+      .btn-start:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+      }
+
+      .btn-stop {
+        background: #ff6b6b;
+        color: white;
+      }
+
+      .btn-stop:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(255, 107, 107, 0.3);
+      }
+
+      .btn-check {
+        background: #4ecdc4;
+        color: white;
+      }
+
+      .btn-check:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(78, 205, 196, 0.3);
+      }
+
+      button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none !important;
+        box-shadow: none !important;
+      }
+
+      .status {
+        margin-top: 20px;
+        padding: 15px;
+        border-radius: 10px;
+        font-size: 14px;
+        display: none;
+      }
+
+      .status.success {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+      }
+
+      .status.error {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+      }
+
+      .status.info {
+        background: #d1ecf1;
+        color: #0c5460;
+        border: 1px solid #bee5eb;
+      }
+
+      .log-container {
+        margin-top: 20px;
+        max-height: 200px;
+        overflow-y: auto;
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 15px;
+        font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
+        font-size: 12px;
+        line-height: 1.4;
+        display: none;
+      }
+
+      .log-entry {
+        margin-bottom: 5px;
+        padding: 2px 0;
+      }
+
+      .log-entry.error {
+        color: #dc3545;
+      }
+
+      .log-entry.success {
+        color: #28a745;
+      }
+
+      .printer-status {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 15px;
+        padding: 10px;
+        background: #f8f9fa;
+        border-radius: 10px;
+      }
+
+      .status-indicator {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #6c757d;
+      }
+
+      .status-indicator.connected {
+        background: #28a745;
+      }
+
+      .status-indicator.disconnected {
+        background: #dc3545;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>🖨️ Food Order Printer</h1>
+        <p>Connect your receipt printer and start receiving orders</p>
+      </div>
+
+      <form id="printerForm">
+        <div class="form-group">
+          <label for="restaurantId">Restaurant ID</label>
+          <input
+            type="text"
+            id="restaurantId"
+            placeholder="Enter your restaurant ID"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="backendUrl">Backend URL</label>
+          <input
+            type="text"
+            id="backendUrl"
+            placeholder="https://backend.domain.com"
+            value="https://backend.domain.com"
+            required
+          />
+        </div>
+
+        <div class="button-group">
+          <button type="button" id="startBtn" class="btn-start">
+            Start Printer
+          </button>
+          <button type="button" id="stopBtn" class="btn-stop" disabled>
+            Stop Printer
+          </button>
+          <button type="button" id="checkBtn" class="btn-check">
+            Check Connection
+          </button>
+        </div>
+      </form>
+
+      <div id="status" class="status"></div>
+
+      <div
+        class="status-row"
+        style="display: flex; gap: 10px; margin-top: 15px"
+      >
+        <div class="printer-status" style="flex: 1">
+          <div id="serverStatusIndicator" class="status-indicator"></div>
+          <span id="serverStatusText">Server: Disconnected</span>
+          <span
+            title="Shows if the app is connected to the backend server."
+            style="cursor: help; color: #888; font-size: 12px; margin-left: 4px"
+            >&#9432;</span
+          >
+        </div>
+        <div class="printer-status" style="flex: 1">
+          <div id="printerStatusIndicator" class="status-indicator"></div>
+          <span id="printerStatusText">Printer: Not Detected</span>
+          <span
+            title="Shows if the physical printer is detected and ready."
+            style="cursor: help; color: #888; font-size: 12px; margin-left: 4px"
+            >&#9432;</span
+          >
+        </div>
+      </div>
+
+      <div id="logContainer" class="log-container">
+        <div class="log-entry">Ready to start printer service...</div>
+      </div>
+    </div>
+
+    <script>
+      const { ipcRenderer } = require("electron");
+
+      // DOM elements
+      const startBtn = document.getElementById("startBtn");
+      const stopBtn = document.getElementById("stopBtn");
+      const checkBtn = document.getElementById("checkBtn");
+      const restaurantIdInput = document.getElementById("restaurantId");
+      const backendUrlInput = document.getElementById("backendUrl");
+      const statusDiv = document.getElementById("status");
+      const logContainer = document.getElementById("logContainer");
+      const serverStatusIndicator = document.getElementById(
+        "serverStatusIndicator"
+      );
+      const serverStatusText = document.getElementById("serverStatusText");
+      const printerStatusIndicator = document.getElementById(
+        "printerStatusIndicator"
+      );
+      const printerStatusText = document.getElementById("printerStatusText");
+
+      let isRunning = false;
+      let isServerConnected = false;
+      let isPrinterReady = false;
+
+      // Show status message
+      function showStatus(message, type = "info") {
+        statusDiv.textContent = message;
+        statusDiv.className = `status ${type}`;
+        statusDiv.style.display = "block";
+
+        setTimeout(() => {
+          statusDiv.style.display = "none";
+        }, 5000);
+      }
+
+      // Add log entry
+      function addLogEntry(message, type = "info") {
+        logContainer.style.display = "block";
+        const entry = document.createElement("div");
+        entry.className = `log-entry ${type}`;
+        entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+        logContainer.appendChild(entry);
+        logContainer.scrollTop = logContainer.scrollHeight;
+      }
+
+      function updateServerStatus(connected) {
+        isServerConnected = connected;
+        serverStatusIndicator.className = `status-indicator ${
+          connected ? "connected" : "disconnected"
+        }`;
+        serverStatusText.textContent = `Server: ${
+          connected ? "Connected" : "Disconnected"
+        }`;
+      }
+
+      function updatePrinterStatus(ready) {
+        isPrinterReady = ready;
+        printerStatusIndicator.className = `status-indicator ${
+          ready ? "connected" : "disconnected"
+        }`;
+        printerStatusText.textContent = `Printer: ${
+          ready ? "Ready" : "Not Detected"
+        }`;
+      }
+
+      // Start printer
+      startBtn.addEventListener("click", async () => {
+        const restaurantId = restaurantIdInput.value.trim();
+        const backendUrl = backendUrlInput.value.trim();
+
+        if (!restaurantId) {
+          showStatus("Please enter a Restaurant ID", "error");
+          return;
+        }
+
+        if (!backendUrl) {
+          showStatus("Please enter a Backend URL", "error");
+          return;
+        }
+
+        startBtn.disabled = true;
+        addLogEntry("Starting printer service...", "info");
+
+        try {
+          const result = await ipcRenderer.invoke(
+            "start-printer",
+            restaurantId,
+            backendUrl
+          );
+
+          if (result.success) {
+            isRunning = true;
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+            showStatus(result.message, "success");
+            addLogEntry("Printer service started successfully", "success");
+            // updateServerStatus(true);
+            // updatePrinterStatus(true);
+          } else {
+            showStatus(result.message, "error");
+            addLogEntry(`Failed to start printer: ${result.message}`, "error");
+          }
+        } catch (error) {
+          showStatus(`Error: ${error.message}`, "error");
+          addLogEntry(`Error starting printer: ${error.message}`, "error");
+        }
+      });
+
+      // Stop printer
+      stopBtn.addEventListener("click", async () => {
+        try {
+          const result = await ipcRenderer.invoke("stop-printer");
+
+          if (result.success) {
+            isRunning = false;
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+            showStatus(result.message, "success");
+            addLogEntry("Printer service stopped", "info");
+            updateServerStatus(false);
+            updatePrinterStatus(false);
+          } else {
+            showStatus(result.message, "error");
+          }
+        } catch (error) {
+          showStatus(`Error: ${error.message}`, "error");
+          addLogEntry(`Error stopping printer: ${error.message}`, "error");
+        }
+      });
+
+      // Check printer connection
+      checkBtn.addEventListener("click", async () => {
+        try {
+          const result = await ipcRenderer.invoke("check-printer-connection");
+
+          if (result.success) {
+            showStatus(result.message, "info");
+            addLogEntry(`Printer connection check: ${result.message}`, "info");
+            updatePrinterStatus(result.connected);
+          } else {
+            showStatus(result.message, "error");
+            addLogEntry(
+              `Printer connection check failed: ${result.message}`,
+              "error"
+            );
+          }
+        } catch (error) {
+          showStatus(`Error: ${error.message}`, "error");
+          addLogEntry(
+            `Error checking printer connection: ${error.message}`,
+            "error"
+          );
+        }
+      });
+
+      // Listen for printer output
+      ipcRenderer.on("printer-output", (event, output) => {
+        addLogEntry(output.trim(), "info");
+        // Parse for status updates
+        if (output.includes("Printer connected to backend")) {
+          updateServerStatus(true);
+        }
+        if (output.includes("Printer disconnected from backend")) {
+          updateServerStatus(false);
+        }
+        if (output.match(/Printer status:.*true/)) {
+          updatePrinterStatus(true);
+        }
+        if (output.match(/Printer status:.*false/)) {
+          updatePrinterStatus(false);
+        }
+      });
+
+      // Listen for printer errors
+      ipcRenderer.on("printer-error", (event, error) => {
+        addLogEntry(error.trim(), "error");
+      });
+
+      // Listen for printer process closed
+      ipcRenderer.on("printer-closed", (event, code) => {
+        isRunning = false;
+        startBtn.disabled = false;
+        stopBtn.disabled = true;
+        addLogEntry(`Printer process closed with code: ${code}`, "info");
+        updateServerStatus(false);
+        updatePrinterStatus(false);
+      });
+
+      // Initialize
+      updateServerStatus(false);
+      updatePrinterStatus(false);
+    </script>
+  </body>
+</html>

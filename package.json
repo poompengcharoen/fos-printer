@@ -1,15 +1,21 @@
 {
   "name": "printer",
   "version": "1.0.0",
-  "main": "src/app.ts",
+  "main": "dist/electron/main.js",
   "license": "MIT",
   "scripts": {
     "dev": "nodemon src/app.ts",
-    "build": "tsc",
+    "build": "tsc && yarn copy-files",
     "start": "node dist/app.js",
     "bundle": "node bundle.js",
     "sea:prepare": "yarn build && yarn bundle",
-    "sea:create": "yarn sea:prepare && node --experimental-sea-config sea-config.json"
+    "sea:create": "yarn sea:prepare && node --experimental-sea-config sea-config.json",
+    "electron:dev": "concurrently \"yarn build:watch\" \"wait-on dist/app.js && electron .\"",
+    "electron:build": "yarn build && electron-builder",
+    "build:watch": "tsc --watch",
+    "pack": "yarn build && electron-builder --dir",
+    "dist": "yarn build && electron-builder",
+    "copy-files": "cp -r src/renderer dist/ && cp -r src/assets dist/ 2>/dev/null || true"
   },
   "dependencies": {
     "@node-escpos/core": "^0.6.0",
@@ -29,14 +35,41 @@
   },
   "devDependencies": {
     "@types/bcryptjs": "^3.0.0",
+    "@types/electron": "^1.6.10",
     "@types/express": "^5.0.3",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^24.0.10",
     "@types/qrcode": "^1.5.5",
     "@types/socket.io-client": "^3.0.0",
+    "concurrently": "^8.2.2",
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1",
     "esbuild": "^0.25.6",
     "nodemon": "^3.1.10",
     "ts-node": "^10.9.2",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "wait-on": "^7.2.0"
+  },
+  "build": {
+    "appId": "com.foodordersystem.printer",
+    "productName": "Food Order Printer",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "node_modules/**/*",
+      "package.json"
+    ],
+    "mac": {
+      "category": "public.app-category.business",
+      "target": "dmg"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "linux": {
+      "target": "AppImage"
+    }
   }
 }

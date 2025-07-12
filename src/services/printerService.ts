@@ -135,7 +135,7 @@ export class PrinterService {
         });
       });
     } catch (error) {
-      console.log("🖨️ Printer not available:", error);
+      // console.log("🖨️ Printer not available:", error);
       return false;
     }
   }

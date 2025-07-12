@@ -90,7 +90,7 @@ jobs:
           cd ..
 
           # Copy HTML page and create version info
-          cp ../docs/index.html dist/
+          cp docs/index.html dist/
 
           # Create version.json with current tag
           echo '{"version": "'${GITHUB_REF#refs/tags/}'", "buildDate": "'$(date -u +"%Y-%m-%dT%H:%M:%SZ")'"}' > dist/version.json

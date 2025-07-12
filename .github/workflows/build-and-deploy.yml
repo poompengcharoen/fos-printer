@@ -81,16 +81,16 @@ jobs:
               echo "   - Press Enter" >> README.md
               echo "" >> README.md
               echo "3. **Run the security command:**" >> README.md
-              echo "   - Copy and paste this command: \`xattr -cr \"Food Order Printer.app\"\`" >> README.md
+              echo "   - Copy and paste this command: \`xattr -cr \"Food Order Printer-<version>-<arch>.dmg\"\`" >> README.md
               echo "   - Press Enter" >> README.md
               echo "   - You should see no output (this is normal)" >> README.md
               echo "" >> README.md
               echo "4. **Open the app:**" >> README.md
-              echo "   - Now you can double-click \"Food Order Printer.app\" to open it normally" >> README.md
+              echo "   - Now you can double-click \"Food Order Printer-<version>-<arch>.dmg\" to open it normally" >> README.md
               echo "" >> README.md
               echo "### Method 2: Right-click Method (Easier)" >> README.md
               echo "" >> README.md
-              echo "1. **Right-click** on \"Food Order Printer.app\"" >> README.md
+              echo "1. **Right-click** on \"Food Order Printer-<version>-<arch>.dmg\"" >> README.md
               echo "2. Select **\"Open\"** from the context menu" >> README.md
               echo "3. Click **\"Open\"** in the security dialog that appears" >> README.md
               echo "4. The app will now open and remember this choice for future launches" >> README.md
@@ -118,16 +118,16 @@ jobs:
               echo "   - กด Enter" >> README_TH.md
               echo "" >> README_TH.md
               echo "3. **รันคำสั่งความปลอดภัย:**" >> README_TH.md
-              echo "   - คัดลอกและวางคำสั่งนี้: \`xattr -cr \"Food Order Printer.app\"\`" >> README_TH.md
+              echo "   - คัดลอกและวางคำสั่งนี้: \`xattr -cr \"Food Order Printer-<version>-<arch>.dmg\"\`" >> README_TH.md
               echo "   - กด Enter" >> README_TH.md
               echo "   - คุณจะไม่เห็นผลลัพธ์ใดๆ (นี่เป็นเรื่องปกติ)" >> README_TH.md
               echo "" >> README_TH.md
               echo "4. **เปิดแอป:**" >> README_TH.md
-              echo "   - ตอนนี้คุณสามารถดับเบิลคลิก \"Food Order Printer.app\" เพื่อเปิดได้ตามปกติ" >> README_TH.md
+              echo "   - ตอนนี้คุณสามารถดับเบิลคลิก \"Food Order Printer-<version>-<arch>.dmg\" เพื่อเปิดได้ตามปกติ" >> README_TH.md
               echo "" >> README_TH.md
               echo "### วิธีที่ 2: วิธีคลิกขวา (ง่ายกว่า)" >> README_TH.md
               echo "" >> README_TH.md
-              echo "1. **คลิกขวา** บน \"Food Order Printer.app\"" >> README_TH.md
+              echo "1. **คลิกขวา** บน \"Food Order Printer-<version>-<arch>.dmg\"" >> README_TH.md
               echo "2. เลือก **\"เปิด\"** จากเมนู" >> README_TH.md
               echo "3. คลิก **\"เปิด\"** ในกล่องโต้ตอบความปลอดภัยที่ปรากฏ" >> README_TH.md
               echo "4. แอปจะเปิดและจำการเลือกนี้สำหรับการเปิดครั้งต่อไป" >> README_TH.md

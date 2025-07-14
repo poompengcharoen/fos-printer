@@ -52,10 +52,12 @@ export interface FoodAttributes extends Attributes {
   imageUrl?: string;
 }
 
+import type { OrderStatus } from "../constants/orderStatuses";
+
 export interface OrderAttributes extends Attributes {
   tableId: string;
   sessionId?: string;
-  status: "pending" | "in_progress" | "done";
+  status: OrderStatus;
 }
 
 export interface OrderItemAttributes extends Attributes {
